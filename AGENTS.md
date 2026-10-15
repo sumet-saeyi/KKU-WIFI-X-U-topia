@@ -135,3 +135,21 @@ export interface WalletState {
   pendingSignature: PendingSignatureRequest | null;
 }
 ```
+
+## 4. IMPLEMENTATION VERIFICATION
+
+- Preserve the core type contracts and the exact Solidity source from document 04; compatible optional state fields may extend the demo.
+- Run `npm test` for browser journeys, wallet invariants, API validation, and contract compilation. Browser installation is non-interactive: `npx --yes playwright install chromium`.
+- Verify offline reload against a production build: `TEST_BASE_URL=http://127.0.0.1:3000 TEST_PRODUCTION=1 npm test` with `npm start` running.
+- Keep sample ledger receipts distinct from real transaction hashes. Show raw network details only inside the mentor view. Document required live configuration and verification limits in `docs/06_IMPLEMENTATION_AND_VERIFICATION.md`.
+- A green build alone does not prove responsive layout, complete localization, offline behavior, or payment invariants. Exercise those user journeys before claiming completion.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

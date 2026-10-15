@@ -1,10 +1,21 @@
 # 🌸 U-IKIGAI (powered by U-Pilot)
+
+New here? Read [About This App](./ABOUT_THIS_APP.md) for a plain-language overview, features, demo boundaries, and setup instructions.
+
 ### *"U-topia With Meaning"* — Zero-Nerd Autonomous Finance for Everyday Humans
 
 ![Event](https://img.shields.io/badge/U--Hackathon_2026-FLOW_Summit_Bangkok-10B981?style=for-the-badge)
 ![Tracks](https://img.shields.io/badge/Tracks-Track_1_(AI)_%2B_Track_2_(Web3)-38BDF8?style=for-the-badge)
 ![Avalanche](https://img.shields.io/badge/Avalanche_Primary_Network-Fuji_C--Chain_(43113)-E84142?style=for-the-badge)
 ![UX](https://img.shields.io/badge/UX_Philosophy-Built_For_Humans_Not_Nerds-FBBF24?style=for-the-badge)
+
+---
+
+## Current Working Experience
+
+The app has distinct **Desktop** and **Mobile** interfaces in English, Thai, and Spanish. Familiar tasks lead: pay, save, learn, and share. Desktop has persistent navigation and a money companion; mobile has its own home, balance card, touch-first screens, and bottom navigation. The **生き甲斐 · IKIGAI** selector sits directly above its task, full-width on mobile. Default **Offline practice** (Stage-Safe) runs prepared guidance in the browser. Progress stays on this device. Open **Preferences → Start a fresh practice** to reset.
+
+The default wallet uses **sample money**. Approvals update the local ledger and create clearly labeled demo receipts. The mentor drawer contains an optional live Fuji contract inspector; it requires a deployed vault and your browser wallet. Live AI requires a server-side API key. Full setup, verified behavior, and the external integration boundaries are documented in [Implementation & Verification](./docs/06_IMPLEMENTATION_AND_VERIFICATION.md).
 
 ---
 
@@ -45,7 +56,7 @@ As U-topia CEO Emmanuel Quezada famously put it: *"Crypto is ugly—it's nerds c
 
 ```bash
 # 1. Install dependencies
-npm install
+npm install --yes
 
 # 2. Run local development server (Stage-Safe Mode works out-of-the-box with zero API keys)
 npm run dev
@@ -53,4 +64,45 @@ npm run dev
 # 3. Verify zero-error production build
 npm run build
 ```
-Open **`http://localhost:3000`** to launch the interactive split-screen workspace.
+Open **`http://localhost:3000`** to launch the app. Small screens automatically start in the mobile experience.
+
+### Preview the Web and Mobile Experiences
+
+Use the **Desktop / Mobile** selector at the top, or open an experience directly:
+
+- **Desktop:** `http://localhost:3000/desktop` — persistent navigation, spacious task workspace, and a money companion.
+- **Mobile:** `http://localhost:3000/mobile` — dedicated home, balance card, bottom navigation, focused tasks, and approval sheets. Larger displays preview it at 430px.
+
+Choose **Show me around** for a three-step introduction, or select one of the four familiar tasks. Saving uses three short steps; paying, receiving income, and merchant cards have separate tabs. Balances change only after **Yes, confirm**. Receipts live in **My money → Recent activity**.
+
+### Verify the Experience
+
+```bash
+# Install the browser once for local UI checks
+npx --yes playwright install chromium
+
+# Browser journeys, wallet invariants, API errors, and contract compilation
+npm test
+
+# Production build with TypeScript checking
+npm run build
+
+# Serve the production app
+npm start
+```
+
+The suite checks widths from 320px to 1440px, the position and all four choices of the Ikigai selector, translated approvals, persistence, cancellation, balances, stock holdings, one-time XP rewards, and operation with the network disabled. To include the production offline-reload check while `npm start` is running:
+
+```bash
+TEST_BASE_URL=http://127.0.0.1:3000 TEST_PRODUCTION=1 npm test
+```
+
+Production builds cache the app after the first online visit. Stage-Safe then supports a full reload without a network connection on localhost or HTTPS. Voice playback uses the device’s installed browser voices; unavailable voices are explained on screen. The development server intentionally does not install an offline worker.
+
+### Enable Live AI or Fuji Contract Records
+
+Copy `.env.example` to `.env.local`, set `OPENAI_API_KEY`, and restart the server. The default model is `gpt-5-mini`; override it with `OPENAI_MODEL`. Switch **Preferences → Offline practice** off to use live coaching, caption rewriting, scripts, or photo descriptions. Failed live requests show an error and never silently authorize a payment. API keys remain on the server.
+
+For Fuji, open **Preferences → Mentor Architecture View → Optional live Fuji contract inspector** and choose **Deploy vault on Fuji with my wallet**. Your browser wallet must hold test AVAX and approve the deployment. The confirmed address is saved on this device; use **Connect & verify Fuji vault** afterward. An existing deployed address can also be entered manually or configured with `NEXT_PUBLIC_VAULT_ADDRESS` before building. The inspector verifies chain `43113` and contract code, checks the connected account before each write, and links actual submitted transaction hashes to the Fuji explorer. This integration stores USD values in **cents**. The supplied contract records metadata and events; it does not transfer tokens or enforce a gift maturity date. X-Chain and P-Chain remain documented architecture/roadmap items.
+
+`npm run contract:build` compiles the exact document-04 Solidity source to an ABI/bytecode artifact at `public/contracts/UIkigaiVault.json`; development, production builds, and tests run this automatically. The artifact targets Cancun, following [Avalanche’s compiler compatibility guidance](https://build.avax.network/academy/blockchain/solidity-foundry/03-smart-contracts/03-foundry-quickstart). The tests also deploy this bytecode in an isolated local EVM, submit signed local transactions, and verify spending authorization, caps, reset behavior, split events, and gift storage. These execution tests do not contact Fuji or use real wallet keys.

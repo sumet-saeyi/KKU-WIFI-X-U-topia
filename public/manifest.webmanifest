@@ -1,0 +1,10 @@
+{
+  "name": "U-Ikigai — U-topia With Meaning",
+  "short_name": "U-Ikigai",
+  "description": "A calm companion for dreams, skills, community and everyday money.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090F1A",
+  "theme_color": "#090F1A",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
