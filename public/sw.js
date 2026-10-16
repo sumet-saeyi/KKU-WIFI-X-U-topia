@@ -1,7 +1,7 @@
-const CACHE = 'u-ikigai-offline-v5';
+const CACHE = 'u-ikigai-offline-v7';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['/', '/mobile', '/desktop', '/manifest.webmanifest', '/icon.svg', '/contracts/UIkigaiVault.json'])).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['/', '/mobile', '/desktop', '/manifest.webmanifest', '/icon.svg', '/contracts/UIkigaiVault.json', '/brands/ubot.svg', '/brands/u-topia.svg', '/brands/elevenlabs.svg', '/brands/avalanche.svg'])).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith('u-ikigai-offline-') && key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener('message', (event) => {
