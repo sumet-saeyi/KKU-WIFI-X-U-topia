@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "logo:export": "node scripts/export-logo.mjs",
+    "docs:screenshots": "node scripts/capture-readme.mjs",
     "contract:build": "node scripts/compile-contract.mjs",
     "predev": "npm run contract:build",
     "dev": "next dev",
@@ -35,6 +37,7 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "solc": "^0.8.36",
+    "sharp": "0.35.5",
     "typescript": "^5.9.3"
   }
 }

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 async function open(page: Page, route = '/desktop') {
   await page.addInitScript(() => {
@@ -60,7 +60,8 @@ test('settings reset balances, progress, form choices and local practice state',
   await expect(page.locator('.balance-total')).toHaveText('$2,809.78');
   await page.getByRole('button', { name: 'Open preferences', exact: true }).click();
   await expect(page.getByRole('switch', { name: 'Read aloud', exact: true })).toHaveAttribute('aria-checked', 'false');
-  await expect(page.getByRole('switch', { name: 'Offline practice', exact: true })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('switch', { name: 'Offline practice', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toContainText('AI connects automatically');
 });
 
 test('rules are optional, persist and prepare only explicitly approved examples', async ({ page }) => {

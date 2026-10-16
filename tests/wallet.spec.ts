@@ -117,28 +117,29 @@ test('Fuji record adapter reports submitted and confirmed receipts without chang
   expect(called).toBe(true); expect(receipt).toEqual({ hash, blockNumber: 42 });
 });
 
-test('live API handles real wire shape, Spanish instructions, images and upstream failures', async () => {
+test('live U-Bot API handles streamed text, Spanish instructions, images and upstream failures', async () => {
   const originalFetch = globalThis.fetch;
-  const originalKey = process.env.OPENAI_API_KEY;
-  process.env.OPENAI_API_KEY = 'unit-test-key';
+  const originalKey = process.env.UBOT_BEARER_TOKEN;
+  process.env.UBOT_BEARER_TOKEN = 'unit-test-token';
   let input: Record<string, unknown> = {};
   try {
     globalThis.fetch = async (_url, options) => {
       input = JSON.parse(String(options?.body));
-      return Response.json({ output: [{ type: 'message', content: [{ type: 'output_text', text: 'Una explicación clara.' }] }] });
+      return new Response('[STATUS:thinking]Una explicación clara.');
     };
     const req = (data: object) => new Request('http://localhost/api/agent', { method: 'POST', body: JSON.stringify({ stageSafeMode: false, language: 'es', ...data }) });
     const response = await POST(req({ prompt: 'Describe', image: 'data:image/png;base64,aGVsbG8=' }));
     expect(response.status).toBe(200); expect((await response.json()).text).toBe('Una explicación clara.');
-    expect(input.instructions).toContain('Mexican Spanish'); expect(input.store).toBe(false);
-    expect(JSON.stringify(input.input)).toContain('input_image');
+    const messages = input.messages as { role: string; content: unknown }[];
+    expect(messages[0].content).toContain('Mexican Spanish'); expect(input.mode).toBe('fast');
+    expect(JSON.stringify(messages)).toContain('image_url');
     expect((await POST(req({ image: 'https://untrusted.invalid/photo.png' }))).status).toBe(400);
-    globalThis.fetch = async () => Response.json({ output: [] });
+    globalThis.fetch = async () => new Response('');
     expect((await POST(req({ prompt: 'hello' }))).status).toBe(502);
     globalThis.fetch = async () => { throw new Error('offline'); };
     expect((await POST(req({ prompt: 'hello' }))).status).toBe(504);
   } finally {
     globalThis.fetch = originalFetch;
-    if (originalKey === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = originalKey;
+    if (originalKey === undefined) delete process.env.UBOT_BEARER_TOKEN; else process.env.UBOT_BEARER_TOKEN = originalKey;
   }
 });

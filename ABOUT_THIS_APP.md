@@ -47,19 +47,27 @@ These are local development addresses, not public deployment links.
 4. Open **My money → Recent activity** to view your receipt.
 5. Explore **Dreams & gifts**, which guides you through purpose, amount, and meaning in three steps.
 
-No real payment is made by these demo actions. The home-screen helper also accepts familiar requests such as “I want to save” and takes you to the relevant task.
+No real payment is made by these demo actions. The home-screen question box accepts familiar requests such as “I want to save” and opens a conversation with U-Pilot. You can ask follow-up questions, hear answers aloud, and choose an explained next step.
+
+## Meet U-Pilot, your AI companion
+
+Open **Ask AI companion** from the header or **Ask U-Pilot** inside a task. The companion uses your current task and sample balances as context. It can explain options, help think through goals, and propose supported sample actions—but it cannot approve them for you.
+
+Each answer clearly identifies whether it is a saved guide or a connected AI response. U-Pilot connects automatically whenever possible. Connected requests support photo questions; saved guides never pretend to see your images. You can stop a request, retry a failed answer, start a new conversation, or read a reply aloud.
+
+**Dreams & gifts** also offers meaning-note drafting: try a prepared dedication offline, or ask connected AI to draft one that you can review and edit. See the [AI integration and experience guide](./docs/07_AI_EXPERIENCE.md) for setup, privacy, and verification boundaries.
 
 ## Language, voice, and accessibility
 
 The everyday interface supports **English, Thai, and Spanish**. You can change language in the header or in **Preferences**.
 
-Read-aloud guidance explains tasks in the selected language. Automatic narration can be turned off, while individual listening controls remain available. Actual voice availability depends on the browser and voices installed on the device.
+Read-aloud guidance explains tasks in the selected language. Automatic narration can be turned off, while individual listening controls remain available. Connected narration uses ElevenLabs; offline narration uses installed device voices. If connected speech is unavailable, the app explains the device-voice fallback. Reading aloud in connected mode shares the selected text with ElevenLabs.
 
 The interface includes keyboard-operable tabs, visible focus indicators, reduced-motion support, readable text, and touch-friendly controls.
 
 ## Designed for unreliable Wi-Fi
 
-**Offline practice** is enabled by default. Prepared coaching, sample payment scenarios, caption review, and video scripts run locally without an AI API key.
+**AI connects automatically.** No offline-mode switch is needed. When disconnected, prepared coaching, sample payment scenarios, caption review, and video scripts remain available locally. A failed live chat request uses a clearly labeled saved guide, then tries online again on the next question.
 
 A production build caches the app for offline reload after an initial online visit. This requires service-worker support and HTTPS or localhost. The development server does not enable offline reload caching. External referral destinations and connected services still require a network connection.
 
@@ -71,7 +79,7 @@ The interface, local balance calculations, approval flow, learning progress, cop
 
 Payments, grocery purchases, stock and precious-metal holdings, and incoming income use sample data. Demo receipts are not blockchain transaction hashes. Saved automation rules run only when you explicitly try their example; they do not book flights or move money after the browser closes.
 
-An optional connected AI mode needs server-side configuration. A separate **Preferences → Mentor Architecture View** exposes the contract source, tool traces, architecture, and an optional Avalanche Fuji testnet inspector. The inspector requires a compatible browser wallet and test funds for actual testnet writes. The supplied contract records metadata and events; it does not transfer assets or enforce gift-release dates. X-Chain and P-Chain integrations remain architecture and roadmap items.
+Connected AI uses U-Bot with server-side account configuration; generated speech uses a separate ElevenLabs key. The app keeps credentials out of browser code. Connected conversations may be retained by U-Bot; clearing the local conversation does not delete provider history. A separate **Preferences → Mentor Architecture View** exposes the contract source, tool traces, architecture, and an optional Avalanche Fuji testnet inspector. The inspector requires a compatible browser wallet and test funds for actual testnet writes. The supplied contract records metadata and events; it does not transfer assets or enforce gift-release dates. X-Chain and P-Chain integrations remain architecture and roadmap items.
 
 Fees, exchange values, and asset amounts are illustrative. Caption review helps identify listed risky wording; it is not legal certification. The app does not promise investment returns.
 
@@ -84,7 +92,7 @@ npm ci --yes
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000/). Default offline-practice features need no API key or connected wallet.
+Open [localhost:3000](http://localhost:3000/). Saved guides need no API key, and the sample wallet needs no connected wallet.
 
 For a production build:
 

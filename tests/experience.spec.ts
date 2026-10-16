@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 async function openApp(page: Page, path = '/') {
   await page.addInitScript(() => {
@@ -162,6 +162,8 @@ test('newcomer tour leads to a familiar, cancellable first payment', async ({ pa
 test('plain-language helper and income allocation lead to real local actions', async ({ page }) => {
   await openApp(page); await page.getByRole('textbox', { name: 'What would you like help with?' }).fill('I want to save for my family');
   await page.getByRole('button', { name: 'Find my first step' }).click();
+  await expect(page.getByRole('dialog', { name: 'Your AI companion', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Open this task', exact: true }).click();
   await expect(page.locator('#ikigai-focus')).toHaveValue('passion');
   await choose(page, 'profession');
   await page.getByRole('tab', { name: 'Receive money', exact: true }).click();
@@ -214,7 +216,11 @@ for (const path of ['/', '/mobile', '/desktop']) {
       const scripts = [...document.querySelectorAll<HTMLScriptElement>('script[src]')].map((script) => script.src).filter((src) => src.includes('/_next/static/'));
       return (await Promise.all(scripts.map((src) => caches.match(src)))).every(Boolean);
     })).toBe(true);
+    expect(await page.evaluate(async () => Boolean(await caches.match('/brands/avalanche.svg')))).toBe(true);
     await context.setOffline(true); await page.reload();
+    const avalanche = page.locator('.product-footer').getByRole('img', { name: 'Avalanche', exact: true });
+    await expect(avalanche).toBeVisible();
+    expect(await avalanche.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
     await expect(page.locator('.home-task.vocation')).toBeVisible(); await choose(page, 'vocation');
     await page.getByRole('button', { name: '✦ Ask my coach' }).click();
     await expect(page.locator('.coach-answer')).toContainText('As a creator');

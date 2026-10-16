@@ -1,19 +1,21 @@
 'use client';
 
+import { AgentSourceNote } from '@/components/product/AgentSourceNote';
+
 import { Tabs } from '@/components/ui/Tabs';
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { makeTrace, signatureRequest } from '@/lib/presetData';
 import { words } from '@/lib/i18n';
 import { ModuleHeader, SectionHeading } from './ModuleParts';
-import type { BaseModuleProps } from './moduleTypes';
+import type { AgentResult, BaseModuleProps } from './moduleTypes';
 
 interface ProfessionProps extends BaseModuleProps { activeRules: string[]; onToggleRule: (id: string) => void; }
 
 export function ProfessionAgentPayModule({ language, stageSafeMode, onSignature, onTrace, runAgent, notify, activeRules, onToggleRule }: ProfessionProps) {
   const [tab, setTab] = useState('pay');
   const [busy, setBusy] = useState('');
-  const [vision, setVision] = useState<{ text: string; language: string } | null>(null);
+  const [vision, setVision] = useState<(AgentResult & { language: string }) | null>(null);
   const [merchant, setMerchant] = useState('Sawasdee Corner Cafe');
   const [qrUrl, setQrUrl] = useState('');
   const [photo, setPhoto] = useState('');
@@ -33,8 +35,8 @@ export function ProfessionAgentPayModule({ language, stageSafeMode, onSignature,
     try {
       const start = performance.now();
       if (id === 'fridge') {
-        const text = await runAgent('vision', 'Describe the missing groceries in the fridge preset: milk, eggs, spinach, bananas and rice. Example cart 1250 THB. This is a prepared demo scenario. Explain that approval is needed.');
-        setVision({ text, language });
+        const result = await runAgent('vision', 'Describe the groceries in the fridge preset: milk, eggs, spinach, bananas and rice. Example cart 1250 THB. This is a prepared demo scenario, not an uploaded photo. Explain that approval is needed.');
+        setVision({ ...result, language });
       }
       const request = signatureRequest(id === 'fridge' ? 'ORDER_FRIDGE_GROCERIES' : 'PAY_THB_BILL', 25, language);
       const trace = makeTrace('profession', id === 'fridge' ? 'prepareGroceryCheckout' : 'readSampleReceipt', { totalThb: id === 'fridge' ? 1250 : 450, mode: stageSafeMode ? 'offline' : 'live' }, 'Prepared the selected example for wallet approval.', 'PASSED_NON_CUSTODIAL_CAP');
@@ -56,7 +58,7 @@ export function ProfessionAgentPayModule({ language, stageSafeMode, onSignature,
   const analyzePhoto = async () => {
     if (!photo || stageSafeMode) return;
     setBusy('photo');
-    try { setVision({ text: await runAgent('vision-photo', 'Describe the visible bill or fridge contents in the selected language. Extract visible amounts if present. Do not invent totals, missing items, purchases, or payment instructions.', photo), language }); }
+    try { setVision({ ...await runAgent('vision-photo', 'Describe the visible bill or fridge contents in the selected language. Extract visible amounts if present. Do not invent totals, missing items, purchases, or payment instructions.', photo), language }); }
     catch (error) { notify((error as Error).message); } finally { setBusy(''); }
   };
   return <div className="module profession-module">
@@ -65,7 +67,7 @@ export function ProfessionAgentPayModule({ language, stageSafeMode, onSignature,
     <section role="tabpanel" id="payment-panel-pay" aria-labelledby="payment-tab-pay" hidden={tab !== 'pay'} className="module-section"><SectionHeading step="1" title={w('What can I help with?', 'อยากให้ช่วยเรื่องไหน', '¿En qué puedo ayudarte?')} description={w('Try a prepared example. Review it before anything moves.', 'ลองตัวอย่างที่เตรียมไว้ ตรวจสอบก่อนเงินเคลื่อนไหว', 'Prueba un ejemplo preparado. Revísalo antes de mover dinero.')} />
       <div className="scenario-grid">{scenarios.map((scenario) => <button key={scenario.id} className="scenario-card" onClick={() => prepareScenario(scenario.id)} disabled={Boolean(busy)}><span className="scan-icon">{scenario.icon}</span><span><small>{w('TRY AN EXAMPLE', 'ลองตัวอย่าง', 'PRUEBA UN EJEMPLO')}</small><strong>{scenario.label}<em>{scenario.value}</em></strong><p>{scenario.detail}</p></span><b>{busy === scenario.id ? '…' : '→'}</b></button>)}</div>
       <details className="sample-receipt"><summary>{w('See the sample bill', 'ดูบิลตัวอย่าง', 'Ver la factura de ejemplo')}</summary><div><span>BANGKOK ELECTRIC</span><p>{w('Monthly electricity', 'ค่าไฟฟ้ารายเดือน', 'Electricidad mensual')}</p><strong>450.00 THB</strong><small>{w('Prepared demo receipt · ≈ $13.50', 'ใบเสร็จเดโม · ประมาณ $13.50', 'Recibo de demostración · ≈ $13.50')}</small></div></details>
-      {vision?.language === language && <div className="vision-result" aria-live="polite"><span>✓</span><p>{vision.text}</p></div>}
+      {vision?.language === language && <div className="vision-result" aria-live="polite"><span>✓</span><p><AgentSourceNote source={vision.source} language={language} />{vision.text}</p></div>}
       {!stageSafeMode && <div className="photo-analysis"><label htmlFor="vision-photo">{w('Or ask about your own photo', 'หรือถามเกี่ยวกับรูปของคุณ', 'O pregunta sobre tu propia foto')}</label><input id="vision-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => {
         const file = event.target.files?.[0]; if (!file) return;
         if (file.size > 4 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { notify(w('Choose a JPG, PNG, or WebP under 4 MB.', 'เลือกรูป JPG, PNG หรือ WebP ไม่เกิน 4 MB', 'Elige un JPG, PNG o WebP de menos de 4 MB.')); return; }

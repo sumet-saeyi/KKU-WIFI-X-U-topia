@@ -1,10 +1,12 @@
 'use client';
 
+import { AgentSourceNote } from '@/components/product/AgentSourceNote';
+
 import { useState } from 'react';
 import { makeTrace, stageSafeAnswer } from '@/lib/presetData';
 import { money, words } from '@/lib/i18n';
 import { ModuleHeader, SectionHeading } from './ModuleParts';
-import type { BaseModuleProps } from './moduleTypes';
+import type { AgentResult, BaseModuleProps } from './moduleTypes';
 
 interface VocationProps extends BaseModuleProps { academyXp: number; completedCourses: string[]; onCompleteCourse: (id: string) => void; }
 
@@ -15,7 +17,7 @@ export function VocationAcademyModule({ language, onSpeak, onTrace, runAgent, no
   const [openLesson, setOpenLesson] = useState(0);
   const [viewed, setViewed] = useState([0]);
   const [busy, setBusy] = useState(false);
-  const [coach, setCoach] = useState<{ text: string; language: string; profile: string } | null>(null);
+  const [coach, setCoach] = useState<(AgentResult & { language: string; profile: string }) | null>(null);
   const w = (en: string, th: string, es: string) => words(language, en, th, es);
   const completed = completedCourses.includes('academy-intro');
   const profiles = [
@@ -28,14 +30,14 @@ export function VocationAcademyModule({ language, onSpeak, onTrace, runAgent, no
     { term: w('Stablecoin', 'เงินดิจิทัลอิงสกุลเงิน', 'Moneda digital estable'), human: w('Digital money designed to follow a familiar currency.', 'เงินดิจิทัลที่ออกแบบให้มูลค่าตามสกุลที่คุ้นเคย', 'Dinero digital diseñado para seguir una moneda conocida.'), example: w('Think of digital dollars you can use across borders.', 'นึกถึงดอลลาร์ดิจิทัลที่ใช้ข้ามพรมแดนได้', 'Piensa en dólares digitales que puedes usar entre países.') },
     { term: w('Tokenized real-world asset', 'สินทรัพย์จริงในรูปดิจิทัล', 'Activo real digitalizado'), human: w('A small digital share tied to something real.', 'ส่วนเล็ก ๆ ในรูปดิจิทัลที่ผูกกับสิ่งของจริง', 'Una pequeña participación digital vinculada a algo real.'), example: w('For example, $10 linked to gold instead of a whole gold bar.', 'เช่น มูลค่า $10 ที่ผูกกับทอง แทนการซื้อทองทั้งแท่ง', 'Por ejemplo, $10 vinculados al oro en vez de comprar un lingote.') },
   ];
-  const coachText = coach?.language === language && coach.profile === profile ? coach.text : stageSafeMode && coach ? stageSafeAnswer(`coach-${profile}`, language) : '';
+  const coachText = coach?.language === language && coach.profile === profile ? coach.text : coach?.source === 'stage-safe' ? stageSafeAnswer(`coach-${profile}`, language) : '';
   const askCoach = async () => {
     setBusy(true);
     try {
       const start = performance.now();
-      const text = await runAgent(`coach-${profile}`, `Explain practical money choices for a ${profile} with monthly income ${income} USD. Use the selected language.`);
-      setCoach({ text, language, profile });
-      const trace = makeTrace('vocation', 'plainLanguageCoach', { profile, income, language }, 'Returned a personalized lesson.');
+      const result = await runAgent(`coach-${profile}`, `Explain practical money choices for a ${profile} with monthly income ${income} USD. Use the selected language.`);
+      setCoach({ ...result, language, profile });
+      const trace = makeTrace('vocation', 'plainLanguageCoach', { profile, income, language, source: result.source }, 'Returned a lesson with its actual source.');
       trace.latencyMs = Math.round(performance.now() - start);
       onTrace(trace);
     } catch (error) { notify((error as Error).message); } finally { setBusy(false); }
@@ -50,7 +52,7 @@ export function VocationAcademyModule({ language, onSpeak, onTrace, runAgent, no
     <section className="module-section"><SectionHeading step="1" title={w('Which sounds like you?', 'แบบไหนใกล้เคียงคุณ', '¿Cuál se parece a ti?')} /><div className="choice-grid profile-grid">{profiles.map((item) => <button key={item.id} aria-pressed={profile === item.id} className={`choice-card ${profile === item.id ? 'active' : ''}`} onClick={() => setProfile(item.id)}><span className="choice-icon">{item.icon}</span><strong>{item.title}</strong><small>{item.text}</small><i>{profile === item.id ? '✓' : ''}</i></button>)}</div></section>
     <section className="module-section"><SectionHeading step="2" title={w('Three ideas, in human language', 'สามเรื่องง่าย ๆ ในภาษาคน', 'Tres ideas en palabras sencillas')} description={w('Open each lesson to complete your introduction.', 'เปิดอ่านแต่ละบทเพื่อเรียนบทนำให้จบ', 'Abre cada lección para completar tu introducción.')} /><div className="lesson-stack">{lessons.map((lesson, index) => <button key={index} aria-expanded={openLesson === index} className={`lesson-card ${openLesson === index ? 'open' : ''}`} onClick={() => { setOpenLesson(index); setViewed((current) => [...new Set([...current, index])]); }}><span>{viewed.includes(index) ? '✓' : index + 1}</span><div><small>{w('YOU MAY HEAR', 'คำที่อาจได้ยิน', 'QUIZÁ ESCUCHES')}</small><strong>{lesson.term}</strong>{openLesson === index && <div className="human-meaning"><small>{w('WHAT IT MEANS FOR YOU', 'ความหมายสำหรับคุณ', 'LO QUE SIGNIFICA PARA TI')}</small><p>{lesson.human}</p><em>{lesson.example}</em></div>}</div><b>{openLesson === index ? '−' : '+'}</b></button>)}</div>
       <div className="inline-actions"><button className="secondary-action" onClick={() => onSpeak(lessons.map((lesson) => `${lesson.human} ${lesson.example}`).join(' '))}>◉ {w('Listen to the summary', 'ฟังสรุปบทเรียน', 'Escuchar el resumen')}</button><button className="secondary-action" disabled={busy} onClick={askCoach}>✦ {busy ? w('Thinking…', 'กำลังคิด…', 'Pensando…') : w('Ask my coach', 'ถามโค้ชของฉัน', 'Preguntar a mi guía')}</button></div>
-      {coachText && <div className="coach-answer" aria-live="polite"><span>◉</span><p>{coachText}</p><button onClick={() => onSpeak(coachText)}>{w('Listen', 'ฟัง', 'Escuchar')}</button></div>}
+      {coachText && <div className="coach-answer" aria-live="polite"><span>◉</span><p><AgentSourceNote source={coach?.language === language && coach.profile === profile ? coach.source : 'stage-safe'} language={language} />{coachText}</p><button onClick={() => onSpeak(coachText)}>{w('Listen', 'ฟัง', 'Escuchar')}</button></div>}
     </section>
     <details className="calculator-disclosure"><summary>{w('Explore your fee & savings calculator', 'ลองเครื่องคำนวณค่าธรรมเนียมและเงินออม', 'Explora tu calculadora de comisiones y ahorro')}</summary><section className="module-section calculator"><SectionHeading step="3" title={w('Keep more of what you earn', 'เก็บรายได้ไว้ได้มากขึ้น', 'Conserva más de lo que ganas')} description={w('Explore a fee and purchasing-power example.', 'ลองคำนวณค่าธรรมเนียมและกำลังซื้อ', 'Explora un ejemplo de comisiones y poder de compra.')} /><label className="range-label" htmlFor="monthly-income"><span>{w('Monthly income or transfer', 'รายรับหรือยอดโอนต่อเดือน', 'Ingreso o transferencia mensual')}</span><strong>{money(income, language)}</strong></label><input id="monthly-income" type="range" min="100" max="3000" step="100" value={income} onChange={(event) => setIncome(Number(event.target.value))} />
       <div className="comparison"><div className="old-way"><small>{w('ILLUSTRATIVE 14% FEE', 'ค่าธรรมเนียมตัวอย่าง 14%', 'COMISIÓN ILUSTRATIVA DEL 14%')}</small><strong>−{money(income * .14, language)}</strong><p>{w('Lost to the transfer cost in this example.', 'เสียไปกับค่าโอนในตัวอย่างนี้', 'Costo de transferencia en este ejemplo.')}</p></div><div className="new-way"><small>{w('0% TRANSFER FEE EXAMPLE', 'ตัวอย่างค่าโอน 0%', 'EJEMPLO CON 0% DE COMISIÓN')}</small><strong>{money(income * .14, language)}</strong><p>{w('More stays available for your life.', 'เหลือไว้ใช้กับชีวิตได้มากขึ้น', 'Más dinero disponible para tu vida.')}</p></div></div>

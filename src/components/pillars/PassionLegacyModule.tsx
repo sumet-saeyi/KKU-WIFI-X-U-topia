@@ -1,13 +1,13 @@
 'use client';
 
 import { FlowSteps } from '@/components/product/FlowSteps';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { meaningNotes, makeTrace, signatureRequest } from '@/lib/presetData';
 import { words } from '@/lib/i18n';
 import { ModuleHeader, SectionHeading } from './ModuleParts';
 import type { BaseModuleProps } from './moduleTypes';
 
-export function PassionLegacyModule({ language, onSpeak, onSignature }: BaseModuleProps) {
+export function PassionLegacyModule({ language, onSpeak, onSignature, runAgent, notify, stageSafeMode, onTrace }: BaseModuleProps) {
   const [step, setStep] = useState(0);
   const [goal, setGoal] = useState('dream');
   const [asset, setAsset] = useState<'gold' | 'silver' | 'stock'>('gold');
@@ -15,6 +15,11 @@ export function PassionLegacyModule({ language, onSpeak, onSignature }: BaseModu
   const [amount, setAmount] = useState(25);
   const [customNote, setCustomNote] = useState<Partial<Record<typeof language, string>>>({});
   const [recipient, setRecipient] = useState('');
+  const [writing, setWriting] = useState(false);
+  const [noteSource, setNoteSource] = useState<'prepared' | 'live' | null>(null);
+  const noteGeneration = useRef(0);
+  useEffect(() => { noteGeneration.current += 1; setWriting(false); }, [language, goal, asset, stock, amount, recipient, stageSafeMode]);
+  useEffect(() => () => { noteGeneration.current += 1; }, []);
   const w = (en: string, th: string, es: string) => words(language, en, th, es);
   const note = customNote[language] ?? meaningNotes[language];
   const goals = [
@@ -39,6 +44,17 @@ export function PassionLegacyModule({ language, onSpeak, onSignature }: BaseModu
     if (asset === 'stock') request.routeDescription += ` · ${stock}`;
     onSignature(request, makeTrace('passion', 'prepareMeaningfulGift', { goal, symbol: request.assetSymbol, amount, recipient: request.recipient, meaningNote: note }, 'Prepared a meaningful asset allocation for explicit demo approval.'));
   };
+  const writeNote = async () => {
+    const generation = ++noteGeneration.current; setWriting(true);
+    const started = performance.now();
+    try {
+      const result = await runAgent('meaning-note', `Write only a warm personal dedication under 60 words in the selected language. It is for a ${goal} goal${recipient.trim() ? ` for ${recipient.trim()}` : ''}, using a sample ${amount} USD allocation in ${asset === 'stock' ? stock : asset}. Express the human purpose, not financial promises. Do not claim to buy, send, lock or transfer anything. This is a draft the person will review and edit.`);
+      if (generation !== noteGeneration.current) return;
+      setCustomNote((current) => ({ ...current, [language]: result.text.trim().slice(0, 600) })); setNoteSource(result.source === 'stage-safe' ? 'prepared' : 'live');
+      const trace = makeTrace('passion', 'draftMeaningNote', { goal, asset, amount, language, source: result.source }, 'Drafted an editable dedication only. No allocation or message was sent.', 'PASSED_NON_CUSTODIAL_CAP'); trace.latencyMs = Math.round(performance.now() - started); onTrace(trace);
+    } catch (error) { if (generation === noteGeneration.current) notify((error as Error).message); }
+    finally { if (generation === noteGeneration.current) setWriting(false); }
+  };
 
   return <div className="module passion-module">
     <ModuleHeader pillar="passion" language={language} title={w('Make room for what you love', 'เติมพื้นที่ให้สิ่งที่คุณรัก', 'Haz espacio para lo que amas')} description={w('A dream, a gift, a little peace of mind. Begin with an amount that feels right.', 'ความฝัน ของขวัญ หรือความอุ่นใจ เริ่มด้วยจำนวนที่คุณสบายใจ', 'Un sueño, un regalo, un poco de tranquilidad. Empieza con una cantidad cómoda.')} />
@@ -52,7 +68,7 @@ export function PassionLegacyModule({ language, onSpeak, onSignature }: BaseModu
       {asset === 'stock' && <div className="amount-picker"><span>{w('Choose a company', 'เลือกบริษัท', 'Elige una empresa')}</span><div>{(['AMZN', 'TSLA'] as const).map((symbol) => <button key={symbol} aria-pressed={stock === symbol} className={stock === symbol ? 'active' : ''} onClick={() => setStock(symbol)}>{symbol === 'AMZN' ? 'Amazon' : 'Tesla'}</button>)}</div></div>}
       <div className="amount-picker"><span>{w('A comfortable amount', 'จำนวนที่สบายใจ', 'Una cantidad cómoda')}</span><div>{[10, 25, 50].map((value) => <button key={value} aria-pressed={amount === value} className={amount === value ? 'active' : ''} onClick={() => setAmount(value)}>${value}</button>)}</div></div>
     </section>
-    <section hidden={step !== 2} className="module-section note-section"><SectionHeading step="3" title={w('Give it a meaning', 'เติมความหมายให้เป้าหมาย', 'Dale un significado')} /><label className="sr-only" htmlFor="meaning-note">{w('Meaning note', 'บันทึกความหมาย', 'Nota con significado')}</label><textarea id="meaning-note" value={note} onChange={(event) => setCustomNote({ ...customNote, [language]: event.target.value })} maxLength={600} /><button className="secondary-action" onClick={() => onSpeak(note)} disabled={!note.trim()}>◉ {w('Hear my note', 'ฟังบันทึกของฉัน', 'Escuchar mi nota')}</button></section>
+    <section hidden={step !== 2} className="module-section note-section"><SectionHeading step="3" title={w('Give it a meaning', 'เติมความหมายให้เป้าหมาย', 'Dale un significado')} /><label className="sr-only" htmlFor="meaning-note">{w('Meaning note', 'บันทึกความหมาย', 'Nota con significado')}</label><textarea id="meaning-note" value={note} onChange={(event) => { noteGeneration.current += 1; setWriting(false); setNoteSource(null); setCustomNote({ ...customNote, [language]: event.target.value }); }} maxLength={600} /><div className="inline-actions"><button className="secondary-action" onClick={writeNote} disabled={writing}>{writing ? w('Writing your draft…', 'กำลังเขียนฉบับร่าง…', 'Escribiendo tu borrador…') : stageSafeMode ? w('Try a prepared meaning note', 'ลองบันทึกความหมายตัวอย่าง', 'Probar una dedicatoria preparada') : w('Help me write with AI', 'ให้ AI ช่วยเขียน', 'Ayúdame a escribir con IA')}</button><button className="secondary-action" onClick={() => onSpeak(note)} disabled={!note.trim()}>◉ {w('Hear my note', 'ฟังบันทึกของฉัน', 'Escuchar mi nota')}</button></div>{noteSource && <p className="input-hint">{noteSource === 'prepared' ? w('Prepared example, not a live AI draft. Edit it to make it yours.', 'ตัวอย่างที่เตรียมไว้ ไม่ใช่ฉบับร่างจาก AI สด แก้ไขให้เป็นตัวคุณได้', 'Ejemplo preparado, no un borrador de IA en vivo. Edítalo para hacerlo tuyo.') : w('AI draft. Review and edit before you use it. Nothing has been sent.', 'ฉบับร่างจาก AI ตรวจสอบและแก้ไขก่อนใช้ ยังไม่มีการส่งข้อความ', 'Borrador de IA. Revísalo y edítalo antes de usarlo. No se ha enviado nada.')}</p>}</section>
     <div className="flow-actions">{step > 0 && <button className="text-button" onClick={() => setStep(step - 1)}>← {w('Back', 'ย้อนกลับ', 'Atrás')}</button>}{step < 2 && <button className="button button-primary" onClick={() => setStep(step + 1)} disabled={step === 0 && goal === 'gift' && !recipient.trim()}>{w('Continue', 'ต่อไป', 'Continuar')} →</button>}</div>
     <button hidden={step !== 2} className="primary-action passion-action" onClick={fund} disabled={goal === 'gift' && !recipient.trim()}><span>♡</span><span><strong>{w('Review my saving plan', 'ตรวจสอบแผนออมของฉัน', 'Revisar mi plan de ahorro')} · ${amount}</strong><small>{goal === 'gift' && !recipient.trim() ? w('Add a recipient to continue', 'เพิ่มผู้รับเพื่อดำเนินการต่อ', 'Añade un destinatario para continuar') : w('Review the details before approving', 'ตรวจสอบรายละเอียดก่อนยืนยัน', 'Revisa los detalles antes de aprobar')}</small></span><b>→</b></button>
   </div>;

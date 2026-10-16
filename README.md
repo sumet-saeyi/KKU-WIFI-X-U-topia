@@ -1,108 +1,222 @@
-# 🌸 U-IKIGAI (powered by U-Pilot)
+<p align="center">
+  <img src="./public/branding/u-ikigai-icon.png" width="112" height="112" alt="U-Ikigai four-petal logo" />
+</p>
 
-New here? Read [About This App](./ABOUT_THIS_APP.md) for a plain-language overview, features, demo boundaries, and setup instructions.
+<h1 align="center">U-Ikigai · 生き甲斐</h1>
 
-### *"U-topia With Meaning"* — Zero-Nerd Autonomous Finance for Everyday Humans
+<p align="center"><strong>U-topia With Meaning</strong></p>
+<p align="center">Money should make room for life. Not take it over.</p>
 
-![Event](https://img.shields.io/badge/U--Hackathon_2026-FLOW_Summit_Bangkok-10B981?style=for-the-badge)
-![Tracks](https://img.shields.io/badge/Tracks-Track_1_(AI)_%2B_Track_2_(Web3)-38BDF8?style=for-the-badge)
-![Avalanche](https://img.shields.io/badge/Avalanche_Primary_Network-Fuji_C--Chain_(43113)-E84142?style=for-the-badge)
-![UX](https://img.shields.io/badge/UX_Philosophy-Built_For_Humans_Not_Nerds-FBBF24?style=for-the-badge)
+<p align="center">
+  U-Hackathon 2026 · FLOW Summit Bangkok<br />
+  AI + Web3 prototype · English / ไทย / Español · Desktop + Mobile
+</p>
 
----
+<p align="center">
+  <a href="#why-we-built-this">The idea</a> ·
+  <a href="#see-the-experience">The experience</a> ·
+  <a href="#run-it-locally">Run it</a> ·
+  <a href="#built-to-be-inspected">Technical proof</a>
+</p>
 
-## Current Working Experience
+## Why we built this
 
-The app has distinct **Desktop** and **Mobile** interfaces in English, Thai, and Spanish. Familiar tasks lead: pay, save, learn, and share. Desktop has persistent navigation and a money companion; mobile has its own home, balance card, touch-first screens, and bottom navigation. The **生き甲斐 · IKIGAI** selector sits directly above its task, full-width on mobile. Default **Offline practice** (Stage-Safe) runs prepared guidance in the browser. Progress stays on this device. Open **Preferences → Start a fresh practice** to reset.
+**A utopia without purpose can still feel empty.**
 
-The default wallet uses **sample money**. Approvals update the local ledger and create clearly labeled demo receipts. The mentor drawer contains an optional live Fuji contract inspector; it requires a deployed vault and your browser wallet. Live AI requires a server-side API key. Full setup, verified behavior, and the external integration boundaries are documented in [Implementation & Verification](./docs/06_IMPLEMENTATION_AND_VERIFICATION.md).
+We can build faster payments, smarter assistants and more ways to earn. But a better financial system should help us answer a more human question: *What is all of this for?*
 
----
+For a freelancer, it might be the freedom to take a day off. For a shop owner, a little less worry at closing time. For a student, the courage to learn something new. For a parent, a small gift that says, “I believe in your future.”
 
-## 📚 Master Documentation Index
+U-Ikigai connects everyday money decisions to those reasons. Inspired by **生き甲斐 — the things that make life feel worthwhile** — it brings dreams, skills, community and daily needs into one calm experience.
 
-1. **[`AGENTS.md`](./AGENTS.md)** — Master system instructions, non-interactive build rules, TypeScript data contracts, and verification steps for OpenAI Codex CLI.
-2. **[`docs/01_GOAL_AND_JUDGING.md`](./docs/01_GOAL_AND_JUDGING.md)** — Project thesis (*"U-topia With Meaning"*), the **"Zero-Nerd 10-Minute Rule"**, stakeholder alignment, and our 2-Gate Judging Strategy.
-3. **[`docs/02_DESIGN_SYSTEM.md`](./docs/02_DESIGN_SYSTEM.md)** — Complete **"Calm Ikigai Futurism"** design system (deep meditative ink `#090F1A`, optical frosted glass, 4 Ikigai pillar color tokens, and breathing Framer Motion animations).
-4. **[`docs/03_PILLARS_AND_FEATURES.md`](./docs/03_PILLARS_AND_FEATURES.md)** — Functional specification for all 4 Ikigai Pillar modules, the Jargon-Free Multilingual TTS Voice Engine (`EN` / `ภาษาไทย` / `ES`), the Hybrid LLM/Vision API (`/api/agent`), and the sticky **U-topia Non-Custodial Phone Simulator**.
-5. **[`docs/04_AVALANCHE_AND_CONTRACT.md`](./docs/04_AVALANCHE_AND_CONTRACT.md)** — How U-Ikigai leverages the **Avalanche Primary Network (C-Chain, X-Chain, P-Chain)** + complete Solidity source code for `contracts/UIkigaiVault.sol`.
-6. **[`docs/05_STAGE_PITCH_AND_DEMO.md`](./docs/05_STAGE_PITCH_AND_DEMO.md)** — Word-for-word 3-minute stage pitch script for Friday's finale and floor mentor Q&A walkthrough.
+You do not need to understand crypto to begin. You do not need to have your whole life figured out, either. A meaningful next step can be small. It can even be free.
 
----
+**U-topia brings the possibilities. U-Ikigai helps people find their reason to use them.**
 
-## 🌟 1. Executive Summary: Fixing "Nerd Crypto" for Everyday People
+## See the experience
 
-As U-topia CEO Emmanuel Quezada famously put it: *"Crypto is ugly—it's nerds creating nerd things for other nerds."* Normal people do not want to deal with `0x` hex addresses, seed-phrase anxiety, bridge exploits, or confusing gas tokens just to save money, pay a bill, or invest in their dreams.
+![U-Ikigai desktop: four everyday tasks, a calm workspace and a sample-money companion](./docs/images/u-ikigai-desktop.png)
 
-* **U-topia** built the financial engine: a non-custodial super app supporting **135+ fiat currencies**, stablecoins (`USDT`/`USDC`), **U-Pay** tap-to-phone payments, **U-Card (Visa)**, and **Tokenized Real-World Assets** (`U-GOLD` Digital Gold, `BLK-SLV` BlackRock iShares Silver Trust, and fractional global stocks like `AMZN` & `TSLA`).
-* **U.Center** built the human community and education DAO: **U Academy**, **U-AI**, and the global **`F0–F20` FLOW** network.
+<details>
+<summary>Open the dedicated mobile experience</summary>
 
-**U-Ikigai** unites both sides under one philosophy: **"U-topia With Meaning."** Built around the 4 Japanese pillars of **Ikigai** (*Passion, Vocation, Mission, Profession*), U-Ikigai strips away 100% of crypto nerd jargon. Using a **Calm Multilingual Voice & Vision AI Companion** backed by invisible **Avalanche C-Chain smart contract guardrails**, any everyday human—whether a freelancer, digital nomad, cafe owner, parent, or complete beginner—can master global non-custodial finance in **under 10 minutes**.
+<p align="center">
+  <img src="./docs/images/u-ikigai-mobile.png" width="390" alt="U-Ikigai mobile home with a sample balance, familiar tasks and bottom navigation" />
+</p>
 
----
+</details>
 
-## 🧭 2. The 4 Pillars of U-Ikigai at a Glance
+Actual application screenshots with sample data. Provider requests are disabled during screenshot capture; the images are not evidence of live AI availability.
 
-| Ikigai Pillar | Ecosystem Target | Module Name & Core "Zero-Nerd" Capability |
-| :--- | :--- | :--- |
-| **1. Passion** *(What You Love)* | **10-Min Human Onboarding** *(CEO Emmanuel Quezada)* | **Passion & Life-Goal RWA Vaults:** Zero-jargon 60-second voice-guided flow (`EN`/`ภาษาไทย`/`ES`) to fund a personal dream (travel, creative studio, first home) or send a `$10` gift of Tokenized Gold (`U-GOLD`), BlackRock Silver (`BLK-SLV`), or Stocks (`AMZN`) to anyone—no hex addresses required. |
-| **2. Vocation** *(What You Are Good At)* | **U Academy & U-AI Utility** *(CAIO Maya Nicks)* | **Zero-Jargon Skill & Wealth Coach:** Translates complex finance into plain human language via a 2-minute interactive persona diagnostic, a custom 10-minute U Academy micro-course, and an Inflation Shield Simulator (`+50 U Academy XP`). |
-| **3. Mission** *(What the World Needs)* | **U.Center DAO Growth** *(President Kyle Kemper & F0–F20 Voters)* | **U-Amplify & Compliance Shield:** LLM regulatory guardrail that strips out risky "guaranteed passive dividend" claims (per `u.center/terms`) and generates compliant 45-sec FLOW Summit viral video scripts + TTS voiceovers + referral QR cards. |
-| **4. Profession** *(What You Get Paid For)* | **Agentic AI Payments** *(CEO Emmanuel Quezada & Avalanche)* | **U-Agent Pay & 4-Way Wealth Splitter:** Vision AI scans Bangkok `450 THB` bills (0% U-Pay fee vs. 14% Western Union fee) & open fridges (`1,250 THB` grocery auto-order), generates printable merchant U-Pay QR standees, and auto-splits income across 4 non-custodial Avalanche sub-vaults. |
+## Four parts of life. One place to begin.
 
----
+The four areas are our product framework, not a test that defines someone’s purpose or a claim that all ikigai fits four circles.
 
-## ⚡ 3. Instant Setup & Verification
+| What matters to you | Where you go | What you can do today |
+| --- | --- | --- |
+| **Everyday peace of mind** | Pay & get paid · Profession | Explore a sample bill or grocery order, review an income split, and generate a merchant payment QR card. |
+| **Dreams and people you love** | Dreams & gifts · Passion | Build a sample saving plan, choose a dream or named recipient, and write a personal meaning note. |
+| **Confidence in what comes next** | Learn & grow · Vocation | Translate unfamiliar financial terms, try practical lessons, compare illustrative fees, and earn learning XP. |
+| **Something good beyond yourself** | Share & inspire · Mission | Rewrite risky promotional language, draft an honest community story, and create a short-video script with a referral QR. |
 
-```bash
-# 1. Install dependencies
-npm install --yes
+## Meet U-Pilot
 
-# 2. Run local development server (Stage-Safe Mode works out-of-the-box with zero API keys)
-npm run dev
+U-Pilot is the app’s warm, practical AI companion. Ask a question, explore a goal, follow up, or hear an explanation in your language. Its shared Ikigai persona encourages manageable steps without turning every conversation into an investment pitch.
 
-# 3. Verify zero-error production build
-npm run build
+- **Live guidance through U-Bot:** contextual conversation, learning support, editable gift-note drafts, community captions, scripts and photo questions.
+- **Read aloud through ElevenLabs:** English, Thai and Spanish, with clearly explained device-voice fallback when generated speech is unavailable.
+- **Online first:** the app tries the live service automatically. Clearly labeled saved guides keep essential practice journeys available when connectivity or a provider fails; the next question tries online again.
+- **You stay in control:** AI can explain or propose a supported example. It cannot approve a payment or execute a financial action.
+
+Live conversation uses U-Bot, not an OpenAI API key. Browser replies currently arrive as validated complete responses, not token-by-token chat streaming. Photos are informational only; a photographed bill never authorizes a payment.
+
+### Guidance is not permission
+
+```text
+Your question → explanation or proposed example → validation
+             → your review → your explicit confirmation → sample receipt
 ```
-Open **`http://localhost:3000`** to launch the app. Small screens automatically start in the mobile experience.
 
-### Preview the Web and Mobile Experiences
+Supported actions are checked against the person’s intent, sample balance and daily allowance. Invalid or mismatched model output cannot become an approval. Closing or cancelling a review does not spend anything.
 
-Use the **Desktop / Mobile** selector at the top, or open an experience directly:
+## Designed to feel human
 
-- **Desktop:** `http://localhost:3000/desktop` — persistent navigation, spacious task workspace, and a money companion.
-- **Mobile:** `http://localhost:3000/mobile` — dedicated home, balance card, bottom navigation, focused tasks, and approval sheets. Larger displays preview it at 430px.
+Familiar tasks come before financial terminology. Desktop has a spacious workspace and persistent money companion; mobile has its own home, touch-first navigation and approval sheet. The **生き甲斐 · IKIGAI** selector stays directly above the task it controls.
 
-Choose **Show me around** for a three-step introduction, or select one of the four familiar tasks. Saving uses three short steps; paying, receiving income, and merchant cards have separate tabs. Balances change only after **Yes, confirm**. Receipts live in **My money → Recent activity**.
+English, Thai and Spanish cover the interface, guides and key review journeys. Calm colors, optional narration and small, progressive steps help people explore at their own pace. Technical addresses, network settings and contract details stay inside **Preferences → Mentor Architecture View**.
 
-### Verify the Experience
+## Built to be inspected
+
+The calm surface is backed by inspectable code, validation and tests.
+
+| Layer | Implementation |
+| --- | --- |
+| Product interface | Next.js 16 App Router, React 19, TypeScript, CSS and Framer Motion |
+| Live AI | Server-side U-Bot adapter with login/token refresh, bounded conversation, cancellation, UTF-8 decoding and runtime output validation |
+| Speech | Server-side ElevenLabs MP3 relay plus browser device voices and explicit fallback labels |
+| Sample wallet | Integer-cent arithmetic, balance conservation, cumulative daily limits, confirmation-time checks and distinct demo receipts |
+| Avalanche | Solidity `UIkigaiVault`, ethers.js and an optional Fuji C-Chain deployment/inspection workflow |
+| Resilience | Local deterministic guides, device-local practice state and production service-worker caching after an initial visit |
+| Verification | Playwright browser journeys, provider transport tests, wallet invariants, solc compilation and isolated EthereumJS contract execution |
+
+### Avalanche: working code, clear boundaries
+
+[`UIkigaiVault.sol`](./contracts/UIkigaiVault.sol) contains agent spending guardrails, allocation events and gift metadata. The mentor inspector can deploy it to **Avalanche Fuji C-Chain**, verify the network and deployed code, and submit records after browser-wallet confirmation. Existing deployments can also be connected.
+
+The contract is compiled and executed in an isolated local EVM during tests. **This is not evidence of a public Fuji deployment.** The supplied contract does not transfer tokens, escrow assets or enforce gift-release dates. X-Chain settlement and a dedicated Avalanche L1 are architecture/roadmap ideas, not completed integrations.
+
+### What this prototype does not claim
+
+The main wallet uses **sample money**, not real financial settlement. Stock, gold, silver, fees and currencies are illustrative inputs—not live market quotes or executed purchases. U-Pay acquiring, U-Card checkout, real asset purchases and scheduled background payments are not connected. Caption rewriting is a drafting aid, not legal certification.
+
+## Run it locally
+
+Use Node.js **20.9 or later** and npm. From the repository directory:
 
 ```bash
-# Install the browser once for local UI checks
+npm ci --yes
+npm run dev
+```
+
+Open [localhost:3000](http://localhost:3000). No provider credentials or wallet are needed to explore the sample tools and saved guides.
+
+- [Desktop](http://localhost:3000/desktop): full workspace with sidebar and money companion.
+- [Mobile](http://localhost:3000/mobile): dedicated mobile experience; small screens select it automatically.
+- **Preferences → Start a fresh practice** resets the local sample ledger and progress.
+
+### Connect live AI and speech
+
+Create an ignored `.env.local` using the variable names in [`.env.example`](./.env.example). Keep all provider credentials server-only.
+
+| Variable | Purpose |
+| --- | --- |
+| `UBOT_EMAIL`, `UBOT_PASSWORD` | U-Bot account login; use a rotated password. |
+| `UBOT_TESTER_ID` | Account tester identifier, if supplied. |
+| `ELEVENLABS_API_KEY` | Generated speech; optional for device-voice reading. |
+| `NEXT_PUBLIC_VAULT_ADDRESS` | Optional **public** Fuji contract address—not a private wallet key. |
+
+Restart the app after configuration. Open **Preferences → Mentor Architecture View → AI integration & connection**, then send a question and follow-up. Credential presence alone does not prove successful generation; check the reply’s actual source and speech fallback labels.
+
+Optional bearer tokens, Supabase configuration, speech models and per-language voices are documented in the [AI integration guide](./docs/07_AI_EXPERIENCE.md).
+
+**Never commit `.env.local`, passwords, bearer tokens or wallet keys. Never give provider secrets a `NEXT_PUBLIC_` prefix.** The credential-containing local `test.ipynb` notebook is also Git-ignored.
+
+### Try the optional Fuji inspector
+
+Open **Preferences → Mentor Architecture View → Optional live Fuji contract inspector**. Connect a browser wallet funded with **test AVAX**, then choose **Deploy vault on Fuji with my wallet** or enter an existing contract address. Confirm any network or transaction requests in your wallet yourself.
+
+The inspector checks chain `43113` and contract code and links real submitted receipts separately from local demo receipts. Contract USD values are encoded in cents. This workflow does not turn the sample wallet into a payment processor.
+
+### Share a hosted demo
+
+The full app needs a host that runs **Next.js server routes**, such as [Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs). A static-only upload cannot run the AI APIs. Deploying the web app and deploying an Avalanche contract are separate steps.
+
+**Before enabling owner-funded AI accounts on an unrestricted public URL, add authentication, per-user usage limits and abuse controls, or restrict the demo to testers.** The prototype does not yet provide those public-service protections. You can host a saved-guide demo without provider secrets.
+
+## A three-minute demo with a human story
+
+1. **Start with a person, not a token.** Open `/desktop`, choose Thai, and show the familiar tasks. Ask what a little more peace of mind would look like.
+2. **Make one everyday decision easier.** Try the Bangkok bill example. Review the amount, confirm it, and inspect the clearly labeled sample receipt.
+3. **Give money a reason.** Choose Dreams & gifts, name someone you love, and create a small sample saving plan with a meaningful note.
+4. **Show the companion.** Ask U-Pilot a question and a follow-up. Use Read aloud and show the actual provider or fallback label.
+5. **Reveal the engineering.** Switch to mobile, then open the mentor drawer for traces, spending limits and the optional Fuji inspector. Finish with what this enables for an everyday person.
+
+## Verification you can reproduce
+
+Last branding verification, **2026-10-16**: production build passed; production test suite **85 passed, 3 skipped**. The skipped tests are explicit opt-in real-provider checks, not silently counted as verified integrations.
+
+```bash
 npx --yes playwright install chromium
-
-# Browser journeys, wallet invariants, API errors, and contract compilation
-npm test
-
-# Production build with TypeScript checking
 npm run build
+npm test
+```
 
-# Serve the production app
+To include actual production offline-reload checks, start the built app:
+
+```bash
 npm start
 ```
 
-The suite checks widths from 320px to 1440px, the position and all four choices of the Ikigai selector, translated approvals, persistence, cancellation, balances, stock holdings, one-time XP rewards, and operation with the network disabled. To include the production offline-reload check while `npm start` is running:
+Then, in a second terminal:
 
 ```bash
 TEST_BASE_URL=http://127.0.0.1:3000 TEST_PRODUCTION=1 npm test
 ```
 
-Production builds cache the app after the first online visit. Stage-Safe then supports a full reload without a network connection on localhost or HTTPS. Voice playback uses the device’s installed browser voices; unavailable voices are explained on screen. The development server intentionally does not install an offline worker.
+Coverage includes 320–1440px layouts, all three languages, offline reloads, approval/cancellation, balance invariants, local contract execution, provider transport and failure behavior, all four attribution logos, and PNG exports. Routine tests replace live provider requests so they do not consume configured accounts.
 
-### Enable Live AI or Fuji Contract Records
+Real U-Bot login, follow-up context and Thai persona behavior were checked separately; details and opt-in commands are in [the AI verification record](./docs/07_AI_EXPERIENCE.md#verification). Real ElevenLabs generation and public Fuji deployment are not claimed by this test result. Audible quality depends on the device and voice.
 
-Copy `.env.example` to `.env.local`, set `OPENAI_API_KEY`, and restart the server. The default model is `gpt-5-mini`; override it with `OPENAI_MODEL`. Switch **Preferences → Offline practice** off to use live coaching, caption rewriting, scripts, or photo descriptions. Failed live requests show an error and never silently authorize a payment. API keys remain on the server.
+## Explore the project
 
-For Fuji, open **Preferences → Mentor Architecture View → Optional live Fuji contract inspector** and choose **Deploy vault on Fuji with my wallet**. Your browser wallet must hold test AVAX and approve the deployment. The confirmed address is saved on this device; use **Connect & verify Fuji vault** afterward. An existing deployed address can also be entered manually or configured with `NEXT_PUBLIC_VAULT_ADDRESS` before building. The inspector verifies chain `43113` and contract code, checks the connected account before each write, and links actual submitted transaction hashes to the Fuji explorer. This integration stores USD values in **cents**. The supplied contract records metadata and events; it does not transfer tokens or enforce a gift maturity date. X-Chain and P-Chain remain documented architecture/roadmap items.
+```text
+src/app/api/             Server-only AI and speech routes
+src/components/         Desktop/mobile UX, four task modules and mentor tools
+src/lib/persona.ts      U-Pilot’s shared Ikigai persona
+src/lib/ubot.ts         U-Bot authentication and request adapter
+src/lib/wallet.ts       Sample ledger and confirmation guardrails
+src/lib/presetData.ts   Deterministic saved guides and example data
+contracts/              UIkigaiVault Solidity source
+tests/                  Browser, provider, wallet and contract checks
+public/branding/        High-resolution project logo PNGs
+docs/                   Product vision, architecture and verification records
+```
 
-`npm run contract:build` compiles the exact document-04 Solidity source to an ABI/bytecode artifact at `public/contracts/UIkigaiVault.json`; development, production builds, and tests run this automatically. The artifact targets Cancun, following [Avalanche’s compiler compatibility guidance](https://build.avax.network/academy/blockchain/solidity-foundry/03-smart-contracts/03-foundry-quickstart). The tests also deploy this bytecode in an isolated local EVM, submit signed local transactions, and verify spending authorization, caps, reset behavior, split events, and gift storage. These execution tests do not contact Fuji or use real wallet keys.
+For a newcomer, start with [About This App](./ABOUT_THIS_APP.md). For implementation details:
+
+- [Goal and judging](./docs/01_GOAL_AND_JUDGING.md) · [Design system](./docs/02_DESIGN_SYSTEM.md) · [Four-pillar specification](./docs/03_PILLARS_AND_FEATURES.md)
+- [Avalanche and contract specification](./docs/04_AVALANCHE_AND_CONTRACT.md) · [Original stage pitch](./docs/05_STAGE_PITCH_AND_DEMO.md)
+- [Implementation boundaries and verification](./docs/06_IMPLEMENTATION_AND_VERIFICATION.md) · [AI setup, privacy and experience](./docs/07_AI_EXPERIENCE.md)
+- [Contributor operating rules](./AGENTS.md)
+
+The first five documents preserve the original product vision. The implementation and AI guides distinguish working behavior from concepts that still require external integrations.
+
+### Logo and attribution
+
+Download the existing four-petal mark as a 1024 × 1024 [transparent PNG](./public/branding/u-ikigai-logo.png) or [dark app-icon PNG](./public/branding/u-ikigai-icon.png). Regenerate them with `npm run logo:export`. Refresh application screenshots against a running local production server with `npm run docs:screenshots`.
+
+The app’s **Powered by** row includes [U-Bot](https://u.bot), [U-topia](https://www.u-topia.com), [ElevenLabs](https://elevenlabs.io) and [Avalanche](https://www.avalanche.com). Original marks belong to their owners; attribution does not imply endorsement, partnership or an active provider connection. [Asset sources](./public/brands/README.md).
+
+---
+
+*A little more balance. A lot more meaning.*
