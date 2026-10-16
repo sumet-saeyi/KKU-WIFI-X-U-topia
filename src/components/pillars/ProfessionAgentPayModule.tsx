@@ -1,6 +1,7 @@
 'use client';
 
 import { AgentSourceNote } from '@/components/product/AgentSourceNote';
+import { Icon } from '@/components/ui/Icon';
 
 import { Tabs } from '@/components/ui/Tabs';
 import { useState } from 'react';
@@ -10,9 +11,9 @@ import { words } from '@/lib/i18n';
 import { ModuleHeader, SectionHeading } from './ModuleParts';
 import type { AgentResult, BaseModuleProps } from './moduleTypes';
 
-interface ProfessionProps extends BaseModuleProps { activeRules: string[]; onToggleRule: (id: string) => void; }
+interface ProfessionProps extends BaseModuleProps { activeRules: string[]; onToggleRule: (id: string) => void; onOpenCard: () => void; }
 
-export function ProfessionAgentPayModule({ language, stageSafeMode, onSignature, onTrace, runAgent, notify, activeRules, onToggleRule }: ProfessionProps) {
+export function ProfessionAgentPayModule({ language, stageSafeMode, onSignature, onTrace, runAgent, notify, activeRules, onToggleRule, onOpenCard }: ProfessionProps) {
   const [tab, setTab] = useState('pay');
   const [busy, setBusy] = useState('');
   const [vision, setVision] = useState<(AgentResult & { language: string }) | null>(null);
@@ -64,7 +65,9 @@ export function ProfessionAgentPayModule({ language, stageSafeMode, onSignature,
   return <div className="module profession-module">
     <ModuleHeader pillar="profession" language={language} title={w('Everyday money, a little easier', 'เรื่องเงินทุกวัน ง่ายขึ้นอีกนิด', 'El dinero cotidiano, más sencillo')} description={w('Pay a bill. Fill the fridge. Give every new payment a purpose.', 'จ่ายบิล เติมของเข้าตู้เย็น ให้รายรับใหม่มีเป้าหมาย', 'Paga una factura. Llena el refrigerador. Dale un propósito a cada ingreso.')} />
     <Tabs id="payment" label={w('Payment tasks', 'งานชำระเงิน', 'Tareas de pago')} value={tab} onChange={setTab} items={[{ id: 'pay', label: w('Pay a bill', 'จ่ายบิล', 'Pagar una factura') }, { id: 'receive', label: w('Receive money', 'รับเงิน', 'Recibir dinero') }, { id: 'merchant', label: w('Accept payments', 'รับชำระเงิน', 'Aceptar pagos') }]} />
-    <section role="tabpanel" id="payment-panel-pay" aria-labelledby="payment-tab-pay" hidden={tab !== 'pay'} className="module-section"><SectionHeading step="1" title={w('What can I help with?', 'อยากให้ช่วยเรื่องไหน', '¿En qué puedo ayudarte?')} description={w('Try a prepared example. Review it before anything moves.', 'ลองตัวอย่างที่เตรียมไว้ ตรวจสอบก่อนเงินเคลื่อนไหว', 'Prueba un ejemplo preparado. Revísalo antes de mover dinero.')} />
+    <section role="tabpanel" id="payment-panel-pay" aria-labelledby="payment-tab-pay" hidden={tab !== 'pay'} className="module-section">
+      <button className="payment-card-link" onClick={onOpenCard}><Icon name="pay" size={22} /><span>{w('Meet your U-topia card', 'รู้จักบัตร U-topia ของคุณ', 'Conoce tu tarjeta U-topia')}<small>{w('Demo card · freeze controls · sample checkout', 'บัตรตัวอย่าง · ควบคุมการระงับ · ทดลองชำระ', 'Tarjeta demo · congelación · pago de ejemplo')}</small></span><Icon name="arrow" size={18} /></button>
+      <SectionHeading step="1" title={w('What can I help with?', 'อยากให้ช่วยเรื่องไหน', '¿En qué puedo ayudarte?')} description={w('Try a prepared example. Review it before anything moves.', 'ลองตัวอย่างที่เตรียมไว้ ตรวจสอบก่อนเงินเคลื่อนไหว', 'Prueba un ejemplo preparado. Revísalo antes de mover dinero.')} />
       <div className="scenario-grid">{scenarios.map((scenario) => <button key={scenario.id} className="scenario-card" onClick={() => prepareScenario(scenario.id)} disabled={Boolean(busy)}><span className="scan-icon">{scenario.icon}</span><span><small>{w('TRY AN EXAMPLE', 'ลองตัวอย่าง', 'PRUEBA UN EJEMPLO')}</small><strong>{scenario.label}<em>{scenario.value}</em></strong><p>{scenario.detail}</p></span><b>{busy === scenario.id ? '…' : '→'}</b></button>)}</div>
       <details className="sample-receipt"><summary>{w('See the sample bill', 'ดูบิลตัวอย่าง', 'Ver la factura de ejemplo')}</summary><div><span>BANGKOK ELECTRIC</span><p>{w('Monthly electricity', 'ค่าไฟฟ้ารายเดือน', 'Electricidad mensual')}</p><strong>450.00 THB</strong><small>{w('Prepared demo receipt · ≈ $13.50', 'ใบเสร็จเดโม · ประมาณ $13.50', 'Recibo de demostración · ≈ $13.50')}</small></div></details>
       {vision?.language === language && <div className="vision-result" aria-live="polite"><span>✓</span><p><AgentSourceNote source={vision.source} language={language} />{vision.text}</p></div>}

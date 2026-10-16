@@ -3,6 +3,7 @@ import './globals.css';
 import './refinements.css';
 import './product.css';
 import './ai.css';
+import './card.css';
 
 export const metadata: Metadata = {
   title: 'U-Ikigai — U-topia With Meaning',

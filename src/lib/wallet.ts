@@ -1,6 +1,6 @@
 import type { PendingSignatureRequest, WalletState } from './types';
 
-export type WalletError = 'pending' | 'balance' | 'cap' | 'invalid';
+export type WalletError = 'pending' | 'balance' | 'cap' | 'invalid' | 'card_frozen';
 const cents = (value: number) => Math.round(value * 100) / 100;
 export const dayKey = (date = new Date()) => date.toISOString().slice(0, 10);
 
@@ -16,6 +16,7 @@ export function validateRequest(wallet: WalletState, request: PendingSignatureRe
   const action = request.onConfirmAction;
   if (!['FUND_GOLD_GOAL', 'FUND_SILVER_GOAL', 'FUND_STOCK_GOAL', 'PAY_THB_BILL', 'ORDER_FRIDGE_GROCERIES', 'SPLIT_INCOME'].includes(action)) return 'invalid';
   if ((action === 'PAY_THB_BILL' && request.usdValue !== 13.5) || (action === 'ORDER_FRIDGE_GROCERIES' && request.usdValue !== 37.5) || (action === 'SPLIT_INCOME' && request.usdValue !== 105)) return 'invalid';
+  if (action === 'ORDER_FRIDGE_GROCERIES' && wallet.cardFrozen) return 'card_frozen';
   if (action.startsWith('FUND_') && request.usdValue > wallet.balances.USDT) return 'balance';
   if (request.isAutomated && cents(wallet.spentTodayUsd + request.usdValue) > wallet.dailyAiCapUsd) return 'cap';
   if (action === 'PAY_THB_BILL' || action === 'ORDER_FRIDGE_GROCERIES') {
@@ -81,6 +82,7 @@ export function confirmWalletRequest(wallet: WalletState, date = new Date()): { 
     txHash: `demo-${pending.id}`,
     timestamp: date.toISOString(),
     chain: 'Local demo receipt · Fuji contract design',
+    ...(action === 'ORDER_FRIDGE_GROCERIES' ? { paymentMethod: 'utopia-card' as const } : {}),
   }, ...current.transactions].slice(0, 50);
   return { wallet: next, error: null };
 }
@@ -104,5 +106,6 @@ export function isStoredWallet(value: unknown): value is WalletState {
     && wallet.transactions.every((tx) => tx && typeof tx.id === 'string' && typeof tx.title === 'string' && typeof tx.timestamp === 'string' && typeof tx.amountText === 'string' && ['passion', 'vocation', 'mission', 'profession'].includes(tx.pillar))
     && (!wallet.activeRules || (Array.isArray(wallet.activeRules) && wallet.activeRules.every((rule) => typeof rule === 'string')))
     && (!wallet.completedCourses || (Array.isArray(wallet.completedCourses) && wallet.completedCourses.every((course) => typeof course === 'string')))
+    && (wallet.cardFrozen === undefined || typeof wallet.cardFrozen === 'boolean')
     && (!wallet.stockBalancesUsd || (Number.isFinite(wallet.stockBalancesUsd.AMZN) && Number.isFinite(wallet.stockBalancesUsd.TSLA)));
 }

@@ -175,6 +175,7 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
   };
   const showWalletError = (error: string) => {
     notify(error === 'cap' ? w('This would exceed your daily limit. Your money stays where it is.', 'รายการนี้เกินวงเงินประจำวัน เงินของคุณยังอยู่ที่เดิม', 'Esto supera tu límite diario. Tu dinero permanece donde está.')
+      : error === 'card_frozen' ? w('Your U-topia demo card is frozen. Unfreeze it in My money before checkout.', 'บัตร U-topia ตัวอย่างถูกระงับ ยกเลิกการระงับใน เงินของฉัน ก่อนชำระ', 'Tu tarjeta U-topia de ejemplo está congelada. Descongélala en Mi dinero antes de pagar.')
       : error === 'pending' ? w('Finish reviewing the current action first.', 'กรุณาตรวจสอบรายการปัจจุบันให้เสร็จก่อน', 'Termina de revisar la acción actual primero.')
       : w('There is not enough available balance for this action.', 'ยอดเงินคงเหลือไม่เพียงพอสำหรับรายการนี้', 'No hay suficiente saldo disponible para esta acción.'));
   };
@@ -234,6 +235,14 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
     notify(w('Done. Your balance and activity are updated.', 'เรียบร้อย ยอดเงินและกิจกรรมอัปเดตแล้ว', 'Listo. Tu saldo y actividad están actualizados.'));
   };
   const cancelSignature = () => { updateWallet({ ...walletRef.current, pendingSignature: null }); notify(w('Cancelled. Nothing moved.', 'ยกเลิกแล้ว ไม่มีเงินเคลื่อนไหว', 'Cancelado. No se movió nada.')); };
+  const toggleCardFrozen = () => {
+    const current = walletRef.current;
+    const cardFrozen = !current.cardFrozen;
+    updateWallet({ ...current, cardFrozen, pendingSignature: cardFrozen && current.pendingSignature?.onConfirmAction === 'ORDER_FRIDGE_GROCERIES' ? null : current.pendingSignature });
+    addTrace(makeTrace('profession', 'updateDemoCardFreeze', { cardFrozen }, 'Updated local demo card controls. Frozen card checkouts are rejected before review and again at confirmation. No issuer API was called.'));
+    notify(cardFrozen ? w('Demo card frozen. Sample card checkouts are blocked.', 'ระงับบัตรตัวอย่างแล้ว ไม่สามารถชำระผ่านบัตรตัวอย่างได้', 'Tarjeta de ejemplo congelada. Los pagos de práctica con tarjeta están bloqueados.') : w('Demo card unfrozen. Every checkout still needs your approval.', 'ยกเลิกการระงับแล้ว ทุกการชำระยังต้องให้คุณยืนยัน', 'Tarjeta de ejemplo descongelada. Cada pago sigue necesitando tu aprobación.'));
+  };
+  const tryCardCheckout = () => prepareSignature(signatureRequest('ORDER_FRIDGE_GROCERIES', 25, language), makeTrace('profession', 'prepareDemoCardCheckout', { amountThb: 1250, amountUsd: 37.5 }, 'Prepared the fixed grocery cart using sample baht. Explicit approval is required; no card network or real merchant is connected.', 'PASSED_NON_CUSTODIAL_CAP'));
   const completeCourse = (courseId: string) => updateWallet(completeAcademy(walletRef.current, courseId));
   const toggleRule = (id: string) => {
     const current = walletRef.current;
@@ -265,13 +274,13 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
                   {pillar === 'passion' && <PassionLegacyModule {...commonProps} />}
                   {pillar === 'vocation' && <VocationAcademyModule {...commonProps} academyXp={wallet.academyXp} completedCourses={wallet.completedCourses ?? []} onCompleteCourse={completeCourse} />}
                   {pillar === 'mission' && <MissionAmplifyModule {...commonProps} />}
-                  {pillar === 'profession' && <ProfessionAgentPayModule {...commonProps} activeRules={wallet.activeRules ?? []} onToggleRule={toggleRule} />}
+                  {pillar === 'profession' && <ProfessionAgentPayModule {...commonProps} activeRules={wallet.activeRules ?? []} onToggleRule={toggleRule} onOpenCard={() => navigate('wallet')} />}
                 </section>)}
               </div>
               <button className="task-voice text-button" aria-pressed={speaking} onClick={() => speak(guideText[language][activePillar])}><Icon name="speaker" size={18} />{speaking ? w('Stop guide', 'หยุดเสียงไกด์', 'Detener guía') : w('Listen to your calm guide', 'ฟังไกด์ที่ใจเย็น', 'Escucha a tu guía')}</button>
               <p className="voice-provider-note" role="status">{voiceLabel}</p>
             </div>
-            <div hidden={screen !== 'wallet'}><WalletPage wallet={wallet} language={language} onNavigate={navigate} onReceipt={setReceipt} /></div>
+            <div hidden={screen !== 'wallet'}><WalletPage wallet={wallet} language={language} onNavigate={navigate} onReceipt={setReceipt} onToggleCardFrozen={toggleCardFrozen} onCardCheckout={tryCardCheckout} /></div>
             <footer className="product-footer"><span>U-IKIGAI</span><p>{w('A little more balance. A lot more meaning.', 'สมดุลเพิ่มอีกนิด ความหมายเพิ่มอีกมาก', 'Un poco más de equilibrio. Mucho más propósito.')}</p><small>FLOW Summit Bangkok · 2026</small><PoweredBy language={language} /></footer>
           </div>
           {experienceMode === 'web' && <WalletCompanion wallet={wallet} language={language} onNavigate={navigate} onReceipt={setReceipt} activePillar={activePillar} onSpeak={speak} />}

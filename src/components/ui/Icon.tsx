@@ -28,6 +28,7 @@ const paths = {
   gift: 'M3 8h18v4H3zM5 12v9h14v-9M12 8v13M12 8H8a3 3 0 1 1 3-3Zm0 0h4a3 3 0 1 0-3-3Z',
   coin: 'M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5-4H10a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H9m3-10v12',
   clock: 'M12 6v6l4 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',
+  freeze: 'M12 2v20M3.34 7l17.32 10M3.34 17 20.66 7M9 4l3 3 3-3M9 20l3-3 3 3M4 10l4-1-1-4m10 14-1-4 4-1M4 14l4 1-1 4M17 5l-1 4 4 1',
 } as const;
 
 export type IconName = keyof typeof paths;

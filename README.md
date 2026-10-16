@@ -59,6 +59,16 @@ The four areas are our product framework, not a test that defines someone’s pu
 | **Confidence in what comes next** | Learn & grow · Vocation | Translate unfamiliar financial terms, try practical lessons, compare illustrative fees, and earn learning XP. |
 | **Something good beyond yourself** | Share & inspire · Mission | Rewrite risky promotional language, draft an honest community story, and create a short-video script with a referral QR. |
 
+## Your everyday card. Your call.
+
+Groceries for tonight. A little less worry about tomorrow. The **U-topia card** brings everyday spending into the same picture as your dreams—not a separate life to manage.
+
+![Actual U-topia demo card with freeze controls, shared daily limit and reviewed sample checkout](./docs/submission-media/04-u-topia-card.png)
+
+Open the card from home, **My money**, or **Pay & get paid**. Freeze/unfreeze it, see the remaining shared daily allowance, and try a **1,250 THB grocery checkout**. Nothing changes until you confirm; a completed practice checkout updates the sample balance and saves a receipt. Controls work in English, Thai and Spanish, including offline after the app has been cached.
+
+**It is a functional card demo, not an issued payment card.** There is no card number, CVV, card-network connection or real charge. Freeze status is saved locally and enforced both before review and at confirmation, including the Smart fridge checkout path. Resetting the practice restores the sample card.
+
 ## Meet U-Pilot
 
 U-Pilot is the app’s warm, practical AI companion. Ask a question, explore a goal, follow up, or hear an explanation in your language. Its shared Ikigai persona encourages manageable steps without turning every conversation into an investment pitch.
@@ -107,7 +117,7 @@ The contract is compiled and executed in an isolated local EVM during tests. **T
 
 ### What this prototype does not claim
 
-The main wallet uses **sample money**, not real financial settlement. Stock, gold, silver, fees and currencies are illustrative inputs—not live market quotes or executed purchases. U-Pay acquiring, U-Card checkout, real asset purchases and scheduled background payments are not connected. Caption rewriting is a drafting aid, not legal certification.
+The main wallet uses **sample money**, not real financial settlement. Stock, gold, silver, fees and currencies are illustrative inputs—not live market quotes or executed purchases. U-Pay acquiring, real card issuance/network charges, real asset purchases and scheduled background payments are not connected. The U-topia card and its checkout are local sample-money experiences. Caption rewriting is a drafting aid, not legal certification.
 
 ## Run it locally
 
@@ -163,7 +173,7 @@ The full app needs a host that runs **Next.js server routes**, such as [Vercel](
 
 ## Verification you can reproduce
 
-Last streaming, voice and UX verification, **2026-10-16**: production build passed; production test suite **116 passed, 5 skipped**. The skipped tests are explicit opt-in real-provider checks, not silently counted as verified integrations. Two separately opted-in real ElevenLabs checks also passed. See the [AI verification record](./docs/07_AI_EXPERIENCE.md#streaming-and-connection-status-update) for provider batching limits and [SDK/live playback checks](./docs/07_AI_EXPERIENCE.md#elevenlabs-sdk-and-live-playback-fix).
+Last card, streaming, voice and UX verification, **2026-10-16**: production build passed; production test suite **130 passed, 5 skipped**. The skipped tests are explicit opt-in real-provider checks, not silently counted as verified integrations. Two separately opted-in real ElevenLabs checks also passed at the preceding voice checkpoint. See the [card verification record](./docs/06_IMPLEMENTATION_AND_VERIFICATION.md#u-topia-card-and-refreshed-submission-media--2026-10-16), [AI verification record](./docs/07_AI_EXPERIENCE.md#streaming-and-connection-status-update) for provider batching limits and [SDK/live playback checks](./docs/07_AI_EXPERIENCE.md#elevenlabs-sdk-and-live-playback-fix).
 
 ```bash
 npx --yes playwright install chromium
@@ -183,7 +193,7 @@ Then, in a second terminal:
 TEST_BASE_URL=http://127.0.0.1:3000 TEST_PRODUCTION=1 npm test
 ```
 
-Coverage includes 320–1440px layouts, all three languages, offline reloads, approval/cancellation, balance invariants, local contract execution, provider transport and failure behavior, all four attribution logos, and PNG exports. Routine tests replace live provider requests so they do not consume configured accounts.
+Coverage includes 320–1440px layouts, all three languages, offline reloads, card freeze/persistence/reset, card and bill approval/cancellation, balance invariants, local contract execution, provider transport and failure behavior, all four attribution logos, and PNG exports. Routine tests replace live provider requests so they do not consume configured accounts.
 
 Real U-Bot login, follow-up context and Thai persona behavior were checked separately. Real ElevenLabs generation and native browser playback also passed in English, Thai and Spanish; details and opt-in commands are in [the AI verification record](./docs/07_AI_EXPERIENCE.md#elevenlabs-sdk-and-live-playback-fix). Public Fuji deployment is not claimed. Audible quality depends on the device and voice.
 

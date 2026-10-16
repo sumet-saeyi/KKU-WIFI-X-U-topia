@@ -21,6 +21,7 @@ export interface WalletTransaction {
   txHash: string;
   timestamp: string;
   chain: string;
+  paymentMethod?: 'utopia-card';
 }
 
 export interface PendingSignatureRequest {
@@ -81,6 +82,7 @@ export interface WalletState {
   spendingDay?: string;
   completedCourses?: string[];
   activeRules?: string[];
+  cardFrozen?: boolean;
 }
 
 export interface AgentResponse {
