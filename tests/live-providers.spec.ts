@@ -33,6 +33,43 @@ test('opt-in real ElevenLabs audio in English, Thai and Spanish', async () => {
   }
 });
 
+test('opt-in real ElevenLabs audio decodes and plays in the browser even with a failed status probe', async ({ page }) => {
+  test.skip(process.env.TEST_LIVE_ELEVENLABS !== '1', 'Requires explicit opt-in and a configured ElevenLabs key; uses native browser audio without replacing playback.');
+  test.setTimeout(150000);
+  type Evidence = { event: string; duration: number; readyState: number };
+  type VoiceWindow = typeof window & { realSpeechEvidence: Evidence[]; realSpeechBytes: number };
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    const target = window as VoiceWindow; target.realSpeechEvidence = []; target.realSpeechBytes = 0;
+    window.Audio = new Proxy(window.Audio, { construct(Target, args) {
+      const audio = Reflect.construct(Target, args) as HTMLAudioElement;
+      // Inspect the same local blob the native player receives; intercepted streaming bodies may be unavailable through CDP.
+      if (typeof args[0] === 'string' && args[0].startsWith('blob:')) void fetch(args[0]).then((response) => response.arrayBuffer()).then((body) => { target.realSpeechBytes = body.byteLength; });
+      for (const event of ['loadedmetadata', 'playing', 'error']) audio.addEventListener(event, () => target.realSpeechEvidence.push({ event, duration: Number.isFinite(audio.duration) ? audio.duration : 0, readyState: audio.readyState }));
+      return audio;
+    } });
+  });
+  // Isolate real speech from U-Bot costs; do not replace /api/tts or native Audio.play.
+  await page.route('**/api/agent', (route) => route.fulfill({ status: 504 }));
+  const samples: Record<string, string> = { en: 'One calm step.', th: 'ค่อย ๆ ไปด้วยกัน', es: 'Un paso tranquilo.' };
+  await page.route('**/api/companion', (route) => route.fulfill({ json: { text: samples[route.request().postDataJSON().language], source: 'live', latencyMs: 1, followUps: [], plan: { kind: 'none', screen: 'home', amountUsd: null, title: '', why: '' } } }));
+  for (const [language, ask, read] of [['en', 'Ask AI companion', 'Read aloud'], ['th', 'ถามเพื่อน AI', 'อ่านให้ฟัง'], ['es', 'Preguntar al compañero de IA', 'Leer en voz alta']]) {
+    await page.goto('/mobile'); await page.locator('.language-select select').selectOption(language);
+    await page.getByRole('button', { name: ask, exact: true }).click();
+    await page.locator('#ai-question').fill(samples[language]); await page.locator('.ai-send').click();
+    await expect(page.locator('.ai-message.assistant')).toBeVisible();
+    const pending = page.waitForResponse((response) => response.url().endsWith('/api/tts') && response.request().method() === 'POST', { timeout: 45000 });
+    await page.getByRole('button', { name: read, exact: true }).click();
+    const response = await pending; expect(response.status()).toBe(200); expect(response.headers()['x-speech-provider']).toBe('elevenlabs');
+    await expect.poll(() => page.evaluate(() => (window as VoiceWindow).realSpeechEvidence.some((item) => item.event === 'playing')), { timeout: 15000 }).toBe(true);
+    await expect.poll(() => page.evaluate(() => (window as VoiceWindow).realSpeechBytes)).toBeGreaterThan(1000);
+    const bytes = await page.evaluate(() => (window as VoiceWindow).realSpeechBytes);
+    const evidence = await page.evaluate(() => (window as VoiceWindow).realSpeechEvidence);
+    expect(evidence.some((item) => item.duration > 0)).toBe(true); expect(evidence.some((item) => item.event === 'error')).toBe(false);
+    await test.info().attach(`real-speech-${language}`, { body: JSON.stringify({ bytes, evidence }), contentType: 'application/json' });
+  }
+});
+
 test('opt-in real U-Bot honors the Ikigai persona in Thai', async () => {
   test.skip(process.env.TEST_LIVE_UBOT !== '1', 'Requires explicit opt-in and a configured U-Bot account.');
   test.setTimeout(120000);

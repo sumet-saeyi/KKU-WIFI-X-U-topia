@@ -93,7 +93,7 @@ The calm surface is backed by inspectable code, validation and tests.
 | --- | --- |
 | Product interface | Next.js 16 App Router, React 19, TypeScript, CSS and Framer Motion |
 | Live AI | Server-side U-Bot adapter with login/token refresh, bounded conversation, cancellation, UTF-8 decoding and runtime output validation |
-| Speech | Server-side ElevenLabs MP3 relay plus browser device voices and explicit fallback labels |
+| Speech | Official ElevenLabs JavaScript SDK on the server, native browser MP3 playback, device voices and explicit fallback labels |
 | Sample wallet | Integer-cent arithmetic, balance conservation, cumulative daily limits, confirmation-time checks and distinct demo receipts |
 | Avalanche | Solidity `UIkigaiVault`, ethers.js and an optional Fuji C-Chain deployment/inspection workflow |
 | Resilience | Local deterministic guides, device-local practice state and production service-worker caching after an initial visit |
@@ -163,7 +163,7 @@ The full app needs a host that runs **Next.js server routes**, such as [Vercel](
 
 ## Verification you can reproduce
 
-Last streaming, voice and UX verification, **2026-10-16**: production build passed; production test suite **106 passed, 4 skipped**. The skipped tests are explicit opt-in real-provider checks, not silently counted as verified integrations. See the [AI verification record](./docs/07_AI_EXPERIENCE.md#streaming-and-connection-status-update) for provider batching limits and [voice recovery checks](./docs/07_AI_EXPERIENCE.md#voice-and-intent-recovery-update).
+Last streaming, voice and UX verification, **2026-10-16**: production build passed; production test suite **116 passed, 5 skipped**. The skipped tests are explicit opt-in real-provider checks, not silently counted as verified integrations. Two separately opted-in real ElevenLabs checks also passed. See the [AI verification record](./docs/07_AI_EXPERIENCE.md#streaming-and-connection-status-update) for provider batching limits and [SDK/live playback checks](./docs/07_AI_EXPERIENCE.md#elevenlabs-sdk-and-live-playback-fix).
 
 ```bash
 npx --yes playwright install chromium
@@ -185,7 +185,7 @@ TEST_BASE_URL=http://127.0.0.1:3000 TEST_PRODUCTION=1 npm test
 
 Coverage includes 320–1440px layouts, all three languages, offline reloads, approval/cancellation, balance invariants, local contract execution, provider transport and failure behavior, all four attribution logos, and PNG exports. Routine tests replace live provider requests so they do not consume configured accounts.
 
-Real U-Bot login, follow-up context and Thai persona behavior were checked separately; details and opt-in commands are in [the AI verification record](./docs/07_AI_EXPERIENCE.md#verification). Real ElevenLabs generation and public Fuji deployment are not claimed by this test result. Audible quality depends on the device and voice.
+Real U-Bot login, follow-up context and Thai persona behavior were checked separately. Real ElevenLabs generation and native browser playback also passed in English, Thai and Spanish; details and opt-in commands are in [the AI verification record](./docs/07_AI_EXPERIENCE.md#elevenlabs-sdk-and-live-playback-fix). Public Fuji deployment is not claimed. Audible quality depends on the device and voice.
 
 ## Explore the project
 

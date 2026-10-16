@@ -6,10 +6,16 @@ let speechRequest: AbortController | null = null;
 let currentAudio: HTMLAudioElement | null = null;
 let currentAudioUrl = '';
 
+export type SpeechServiceFailure = 'not_configured' | 'auth_failed' | 'quota_exceeded' | 'voice_not_configured' | 'busy' | 'speech_unavailable';
+const serviceFailures = new Set<string>(['not_configured', 'auth_failed', 'quota_exceeded', 'voice_not_configured', 'busy', 'speech_unavailable']);
+class SpeechRequestError extends Error {
+  constructor(readonly code: SpeechServiceFailure) { super(code); }
+}
+
 export interface SpeechOptions {
   connected?: boolean;
   onProvider?: (provider: 'browser' | 'elevenlabs', state: 'loading' | 'playing') => void;
-  onFallback?: () => void;
+  onFallback?: (reason: SpeechServiceFailure) => void;
   onUnavailable?: (reason: 'unsupported' | 'language' | 'playback') => void;
 }
 
@@ -42,9 +48,9 @@ export function speakCalmly(text: string, language: LanguageCode, onEnd?: () => 
   const active = () => session === speechSession;
   let finished = false;
   const finish = () => { if (active() && !finished) { finished = true; disposeAudio(); speechRequest = null; onEnd?.(); } };
-  const deviceVoice = (content: string, fallback = false) => {
+  const deviceVoice = (content: string, fallback = false, reason: SpeechServiceFailure = 'speech_unavailable') => {
     if (!active()) return false;
-    if (fallback) options.onFallback?.();
+    if (fallback) options.onFallback?.(reason);
     const unavailable = (reason: 'unsupported' | 'language' | 'playback') => {
       if (active() && !finished) { options.onUnavailable?.(reason); finish(); }
       return false;
@@ -77,7 +83,11 @@ export function speakCalmly(text: string, language: LanguageCode, onEnd?: () => 
       try {
         options.onProvider?.('elevenlabs', 'loading');
         const response = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: chunks[index], language }), signal: AbortSignal.any([controller.signal, AbortSignal.timeout(35000)]) });
-        if (!response.ok || !response.headers.get('content-type')?.startsWith('audio/')) throw new Error('speech_unavailable');
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new SpeechRequestError(serviceFailures.has(body?.code) ? body.code as SpeechServiceFailure : 'speech_unavailable');
+        }
+        if (!response.headers.get('content-type')?.startsWith('audio/')) throw new Error('invalid_audio');
         const audio = await response.blob();
         if (!active()) return;
         if (!audio.size || audio.size > 8_000_000) throw new Error('invalid_audio');
@@ -92,10 +102,10 @@ export function speakCalmly(text: string, language: LanguageCode, onEnd?: () => 
         });
         if (!active()) return;
         disposeAudio();
-      } catch {
+      } catch (error) {
         if (!active() || controller.signal.aborted) return;
         disposeAudio(); speechRequest = null;
-        deviceVoice(chunks.slice(index).join(' '), true);
+        deviceVoice(chunks.slice(index).join(' '), true, error instanceof SpeechRequestError ? error.code : 'speech_unavailable');
         return;
       }
     }

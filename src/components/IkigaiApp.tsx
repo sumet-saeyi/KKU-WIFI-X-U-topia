@@ -22,9 +22,11 @@ import { VocationAcademyModule } from '@/components/pillars/VocationAcademyModul
 import type { AgentResult } from '@/components/pillars/moduleTypes';
 import { guideText, makeTrace, initialWallet, stageSafeAnswer, signatureRequest } from '@/lib/presetData';
 import { pillarOrder, words } from '@/lib/i18n';
-import { speakCalmly, stopSpeaking } from '@/lib/tts';
+import { speakCalmly, stopSpeaking, type SpeechServiceFailure } from '@/lib/tts';
 import { completeAcademy, confirmWalletRequest, isStoredWallet, refreshSpendingDay, validateRequest } from '@/lib/wallet';
 import type { ExperienceMode, LanguageCode, PendingSignatureRequest, PillarId, ToolCallTrace, WalletState, WalletTransaction } from '@/lib/types';
+
+type VoiceIssue = 'language' | 'unavailable' | 'fallback' | Exclude<SpeechServiceFailure, 'speech_unavailable'>;
 
 export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMode }) {
   const [language, setLanguage] = useState<LanguageCode>('en');
@@ -40,7 +42,7 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
   const [speaking, setSpeaking] = useState(false);
   const [voiceProvider, setVoiceProvider] = useState<'browser' | 'elevenlabs'>('browser');
   const [voiceLoading, setVoiceLoading] = useState(false);
-  const [voiceIssue, setVoiceIssue] = useState<'' | 'language' | 'unavailable' | 'fallback'>('');
+  const [voiceIssue, setVoiceIssue] = useState<'' | VoiceIssue>('');
   const [speechConfigured, setSpeechConfigured] = useState(false);
   const [toast, setToast] = useState('');
   const [guideOpen, setGuideOpen] = useState(false);
@@ -57,11 +59,19 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const w = (en: string, th: string, es: string) => words(language, en, th, es);
-  const voiceIssueMessage = (issue: 'language' | 'unavailable' | 'fallback') => issue === 'language'
-    ? w('This device has no voice for this language. Your guide text is still on screen.', 'อุปกรณ์นี้ยังไม่มีเสียงภาษานี้ คุณยังอ่านคำแนะนำบนจอได้', 'Este dispositivo no tiene voz para este idioma. Puedes leer la guía en pantalla.')
-    : issue === 'fallback'
-      ? w('Device voice · ElevenLabs is unavailable', 'เสียงจากอุปกรณ์ · ElevenLabs ยังไม่พร้อม', 'Voz del dispositivo · ElevenLabs no está disponible')
-      : w('Voice is unavailable here. Your guide text is shown on screen.', 'อุปกรณ์นี้ยังไม่พร้อมอ่านเสียง คุณอ่านคำแนะนำบนจอได้', 'La voz no está disponible aquí. Puedes leer la guía en pantalla.');
+  const voiceIssueMessage = (issue: VoiceIssue) => {
+    const messages = {
+      language: ['This device has no voice for this language. Your guide text is still on screen.', 'อุปกรณ์นี้ยังไม่มีเสียงภาษานี้ คุณยังอ่านคำแนะนำบนจอได้', 'Este dispositivo no tiene voz para este idioma. Puedes leer la guía en pantalla.'],
+      fallback: ['Device voice · ElevenLabs is unavailable', 'เสียงจากอุปกรณ์ · ElevenLabs ยังไม่พร้อม', 'Voz del dispositivo · ElevenLabs no está disponible'],
+      unavailable: ['Voice is unavailable here. Your guide text is shown on screen.', 'อุปกรณ์นี้ยังไม่พร้อมอ่านเสียง คุณอ่านคำแนะนำบนจอได้', 'La voz no está disponible aquí. Puedes leer la guía en pantalla.'],
+      not_configured: ['Online voice is not connected on this site yet, and device speech could not start. Please ask the app owner to connect voice.', 'เว็บไซต์นี้ยังไม่เชื่อมต่อเสียงออนไลน์ และอุปกรณ์อ่านเสียงไม่ได้ กรุณาแจ้งเจ้าของแอปให้เชื่อมต่อเสียง', 'La voz en línea aún no está conectada en este sitio y la del dispositivo no pudo iniciarse. Pide al responsable que conecte la voz.'],
+      auth_failed: ['ElevenLabs could not authorize this site, and device speech could not start. Please ask the app owner to check the voice connection.', 'ElevenLabs ไม่อนุญาตการเชื่อมต่อของเว็บไซต์นี้ และอุปกรณ์อ่านเสียงไม่ได้ กรุณาแจ้งเจ้าของแอปให้ตรวจการเชื่อมต่อเสียง', 'ElevenLabs no pudo autorizar este sitio y la voz del dispositivo no pudo iniciarse. Pide al responsable que revise la conexión.'],
+      quota_exceeded: ['This site has used its online voice allowance, and device speech could not start. Your text is still available.', 'เว็บไซต์นี้ใช้โควตาเสียงออนไลน์ครบแล้ว และอุปกรณ์อ่านเสียงไม่ได้ คุณยังอ่านข้อความได้', 'Este sitio agotó su cuota de voz en línea y la del dispositivo no pudo iniciarse. El texto sigue disponible.'],
+      voice_not_configured: ['The selected online voice is unavailable, and device speech could not start. Please ask the app owner to choose an accessible voice.', 'เสียงออนไลน์ที่เลือกยังใช้ไม่ได้ และอุปกรณ์อ่านเสียงไม่ได้ กรุณาแจ้งเจ้าของแอปให้เลือกเสียงที่เข้าถึงได้', 'La voz en línea elegida no está disponible y la del dispositivo no pudo iniciarse. Pide al responsable que elija una voz accesible.'],
+      busy: ['Online voice is busy, and device speech could not start. Please try Read aloud again in a moment.', 'เสียงออนไลน์กำลังมีผู้ใช้มาก และอุปกรณ์อ่านเสียงไม่ได้ รอสักครู่แล้วลองอ่านให้ฟังอีกครั้ง', 'La voz en línea está ocupada y la del dispositivo no pudo iniciarse. Intenta leer en voz alta de nuevo en un momento.'],
+    };
+    const [en, th, es] = messages[issue]; return w(en, th, es);
+  };
 
   const updateWallet = (next: WalletState) => { walletRef.current = next; setWallet(next); };
   const askAi = (text = '') => { setAiSeed((current) => ({ id: current.id + 1, text })); setAiOpen(true); };
@@ -133,15 +143,16 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
   const startReading = (text: string, spokenLanguage: LanguageCode = language) => {
     setSpeaking(true); setVoiceIssue('');
     let unavailableReported = false;
+    let onlineFailure: SpeechServiceFailure | null = null;
     const unavailable = (reason: 'unsupported' | 'language' | 'playback') => {
       unavailableReported = true;
-      const issue = reason === 'language' ? 'language' : 'unavailable';
+      const issue: VoiceIssue = onlineFailure && onlineFailure !== 'speech_unavailable' ? onlineFailure : reason === 'language' ? 'language' : 'unavailable';
       setVoiceIssue(issue); notify(voiceIssueMessage(issue));
     };
     if (!speakCalmly(text, spokenLanguage, () => { setSpeaking(false); setVoiceLoading(false); }, {
-      connected: !stageSafeMode && speechConfigured,
-      onProvider: (provider, state) => { setVoiceProvider(provider); setVoiceLoading(state === 'loading'); },
-      onFallback: () => { setVoiceIssue('fallback'); notify(w('ElevenLabs is unavailable. Using your device voice instead.', 'ElevenLabs ยังไม่พร้อม จึงใช้เสียงจากอุปกรณ์แทน', 'ElevenLabs no está disponible. Se usará la voz de tu dispositivo.')); },
+      connected: !stageSafeMode,
+      onProvider: (provider, state) => { setVoiceProvider(provider); setVoiceLoading(state === 'loading'); if (provider === 'elevenlabs' && state === 'playing') setSpeechConfigured(true); },
+      onFallback: (reason) => { onlineFailure = reason; setVoiceIssue('fallback'); notify(w('ElevenLabs is unavailable. Using your device voice instead.', 'ElevenLabs ยังไม่พร้อม จึงใช้เสียงจากอุปกรณ์แทน', 'ElevenLabs no está disponible. Se usará la voz de tu dispositivo.')); },
       onUnavailable: unavailable,
     }) && !unavailableReported) unavailable('unsupported');
   };

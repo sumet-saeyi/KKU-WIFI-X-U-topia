@@ -116,7 +116,7 @@ test('ElevenLabs route validates inputs and streams language-specific speech wit
     expect((await synthesize(req({ text: 'x'.repeat(4001), language: 'en' }))).status).toBe(400);
     expect((await synthesize(new Request('http://localhost/api/tts', { method: 'POST', headers: { Origin: 'https://other.invalid' }, body: JSON.stringify({ text: 'hi', language: 'en' }) }))).status).toBe(403);
     globalThis.fetch = async () => new Response('private provider error', { status: 401 });
-    expect(await (await synthesize(req({ text: 'hi', language: 'en' }))).json()).toEqual({ code: 'speech_unavailable' });
+    expect(await (await synthesize(req({ text: 'hi', language: 'en' }))).json()).toEqual({ code: 'auth_failed' });
     delete process.env.ELEVENLABS_API_KEY; expect((await synthesize(req({ text: 'hi', language: 'en' }))).status).toBe(503);
   } finally {
     globalThis.fetch = original;

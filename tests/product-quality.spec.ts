@@ -30,19 +30,20 @@ test('task tabs support arrow keys, Home and End with matching panels', async ({
 test('voice controls use the selected language and the automatic read-aloud preference', async ({ page }) => {
   await open(page); await page.locator('.home-task.profession').click();
   const spoken = () => page.evaluate(() => (window as typeof window & { ikigaiSpoken: { text: string; lang: string }[] }).ikigaiSpoken);
-  expect((await spoken()).at(-1)?.lang).toBe('en-US');
+  await expect.poll(async () => (await spoken()).at(-1)?.lang).toBe('en-US');
   await page.getByRole('button', { name: 'Stop guide', exact: true }).click();
   await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('th');
-  await focus(page, 'passion'); expect((await spoken()).at(-1)?.lang).toBe('th-TH');
+  await focus(page, 'passion'); await expect.poll(async () => (await spoken()).at(-1)?.lang).toBe('th-TH');
   await page.getByRole('button', { name: 'เปิดการตั้งค่า', exact: true }).click();
   await page.getByRole('switch', { name: 'อ่านออกเสียง', exact: true }).click();
   await page.getByRole('button', { name: 'ปิดการตั้งค่า', exact: true }).click();
   const count = (await spoken()).length; await focus(page, 'vocation'); expect((await spoken()).length).toBe(count);
   await page.getByRole('button', { name: /ฟังสรุปบทเรียน/ }).click();
+  await expect.poll(async () => (await spoken()).length).toBe(count + 1);
   expect((await spoken()).at(-1)?.lang).toBe('th-TH');
   await page.getByRole('combobox', { name: 'ภาษา', exact: true }).selectOption('es');
   await page.getByRole('button', { name: /Escuchar el resumen/ }).click();
-  expect((await spoken()).at(-1)?.lang).toBe('es-MX');
+  await expect.poll(async () => (await spoken()).at(-1)?.lang).toBe('es-MX');
   expect((await spoken()).at(-1)!.text.length).toBeGreaterThan(30);
 });
 

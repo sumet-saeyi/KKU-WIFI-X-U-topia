@@ -21,6 +21,7 @@ async function open(page: Page, mode = 'normal', configured: boolean | null = tr
   }, mode);
   await page.route('**/api/agent', (route) => configured === null ? route.fulfill({ status: 504 }) : route.fulfill({ json: { configured, provider: 'ubot', speech: { configured: false } } }));
   await page.route('**/api/companion', (route) => route.fulfill({ json: answer }));
+  await page.route('**/api/tts', (route) => route.fulfill({ status: 502, json: { code: 'speech_unavailable' } }));
   await page.goto('/mobile');
   await page.getByRole('button', { name: 'Ask AI companion', exact: true }).click();
 }

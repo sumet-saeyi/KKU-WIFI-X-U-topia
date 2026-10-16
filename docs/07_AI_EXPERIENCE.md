@@ -69,11 +69,11 @@ Images are informational only; server and browser both suppress financial propos
 
 ## ElevenLabs speech
 
-The supplied [ElevenLabs Hacker Guide](https://docs.google.com/document/d/1mCh5MtOzBw0aJpurQVUmIVFfPMAHW3MjNemE-LNiMto/edit) identifies ElevenLabs as the speech provider. This integration follows its [speech streaming API](https://elevenlabs.io/docs/api-reference/text-to-speech/stream).
+The supplied [ElevenLabs Hacker Guide](https://docs.google.com/document/d/1mCh5MtOzBw0aJpurQVUmIVFfPMAHW3MjNemE-LNiMto/edit) identifies ElevenLabs as the speech provider. The server now uses the official [`@elevenlabs/elevenlabs-js` SDK](https://github.com/elevenlabs/elevenlabs-js) and its [`textToSpeech.convert` API](https://elevenlabs.io/docs/api-reference/text-to-speech/convert), adapted from the supplied TypeScript example.
 
-Connected reading sends the selected text and language to `/api/tts`. The server keeps `ELEVENLABS_API_KEY` private and relays MP3 audio. The browser buffers one bounded audio chunk before playing it; longer text is split into chunks. Read/Stop controls and optional automatic narration apply to replies, guides, lessons, meaning notes and scripts.
+Connected reading sends the selected text and language to `/api/tts`. The server keeps `ELEVENLABS_API_KEY` private and relays MP3 audio (`mp3_44100_128`). The browser buffers one bounded audio chunk and plays it with native browser audio; longer text is split into chunks. The SDK's Node `play()` helper is deliberately not used: it requires a player on the server machine, not the visitor's browser. Read/Stop controls and optional automatic narration apply to replies, guides, lessons, meaning notes and scripts. A failed or stale configuration probe does not disable the next online speech attempt.
 
-The default `eleven_v3` model supports English, Thai and Spanish. Multilingual v2 and Flash v2.5 do not support Thai; see [model language support](https://elevenlabs.io/docs/overview/models). Set a global voice ID or separate EN/TH/ES IDs. The configured ElevenLabs account must have access to the voice.
+The default `eleven_v3` model supports English, Thai and Spanish. Multilingual v2, Flash v2.5 and Turbo v2.5 do not support Thai; Thai requests automatically use v3 when one of those models is configured. Multilingual v2 conversion omits the unsupported language-code parameter. See [model language support](https://elevenlabs.io/docs/overview/models). Set a global voice ID or separate EN/TH/ES IDs. The configured ElevenLabs account must have access to the voice. The SDK example voice is `JBFqnCBsd6RMkjVDRZzb`; a voice name or unavailable ID is not interchangeable with it.
 
 Stop, dialog closure, language changes and disconnection cancel pending narration and dispose of audio URLs. If ElevenLabs is unavailable, missing configuration or blocked by playback policy, the app explains the device-voice fallback. Device voices do not require an ElevenLabs key, but availability depends on the device. A populated voice list without a matching language produces a visible explanation rather than selecting the wrong-language voice. An initially empty list still lets the browser resolve the requested language; later synthesis errors are handled explicitly. See the browser's [available-voices API](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis/getVoices) and [speech error event](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisUtterance/error_event).
 
@@ -117,18 +117,30 @@ Use `TEST_REQUIRE_INCREMENTAL_UBOT=1` with the opt-in stream test when you expli
 TEST_BASE_URL=http://127.0.0.1:3000 TEST_LIVE_UBOT=1 TEST_REQUIRE_INCREMENTAL_UBOT=1 npm test -- tests/live-providers.spec.ts -g 'stream transport'
 ```
 
-Real ElevenLabs audio generation remains unverified until its server key is configured. The device-voice path and generated-audio transport/fallback behavior remain covered separately. Public hosting still requires the account-access and abuse protections described above.
+At the streaming checkpoint, real ElevenLabs generation had not yet been verified. It has since passed the separate [SDK and live playback checks](#elevenlabs-sdk-and-live-playback-fix). Public hosting still requires the account-access and abuse protections described above.
 
 ## Voice and intent recovery update
 
-The latest 2026-10-16 production build and full suite pass: **106 passed, 4 skipped**. Ten additional regression checks verify:
+At this 2026-10-16 recovery checkpoint, the production build and full suite passed: **106 passed, 4 skipped**. Ten additional regression checks verified:
 
 - Read-aloud uses the checkbox's current setting when a reply completes. Turning it off while waiting prevents late speech and stops active narration; turning it on while waiting applies to the finished reply.
 - Device initialization, voice-list, playback and asynchronous speech failures leave the answer readable and restore its Read button. Unsupported devices and missing language voices have localized notices inside the visible chat status line. A browser capture verified the Thai notice at 320px; page-level toasts alone would sit behind the native chat dialog.
 - The green connection indicator requires an actual live reply, not credential presence. A failed configuration probe still allows a successful answer to establish live status.
 - Tested negative instructions such as “I won't save”, “No ahorres” and “ฉันไม่อยากออม” cannot become sample money proposals. Thai “ตัวอย่าง” (example) remains nonnegative. Spanish dollar amounts written as “25 dólares” are recognized; ambiguous comma decimals remain rejected.
 
-These are transport-replaced tests, not new evidence of real provider access or audible speech quality. The previously observed U-Bot batching and missing ElevenLabs key remain the same verification limits.
+These are transport-replaced tests, not evidence of real provider access or audible speech quality. U-Bot batching remains a verification limit; the later ElevenLabs checks below supersede the previously missing-key limitation.
+
+## ElevenLabs SDK and live playback fix
+
+The latest production build exits 0 and the ordinary production suite reports **116 passed, 5 skipped**. Ten added speech checks cover independent online attempts, SDK/model/MP3 settings, safe error categories, cancellation and no automatic retries. The five skipped cases require explicit real-provider opt-in; the two ElevenLabs cases were also run separately and passed.
+
+The reported “Voice is unavailable” issue had two reproduced causes: a failed/stale status probe skipped speech requests entirely, and the local configured voice was unavailable. A direct request with the example voice succeeded. The local voice setting was corrected to `JBFqnCBsd6RMkjVDRZzb`; the existing API key remains private and Git-ignored.
+
+Online reading now tries `/api/tts` regardless of the earlier status probe. The SDK runs only on the server with a 30-second timeout, cancellation, no automatic billable retries, input/origin validation, and safe public error codes. If device fallback also fails, the visible chat status explains missing setup, authorization, quota, unavailable voice or service load without displaying provider responses or credentials.
+
+On 2026-10-16, both opt-in real ElevenLabs checks passed: MP3 generation in English, Thai and Spanish, and playback of each language in a native Chromium audio element. The browser check deliberately fails the unrelated status probe, replaces only U-Bot conversation transport to isolate speech costs, and does not replace `/api/tts`, native audio decoding or `Audio.play()`. It observes nonempty playback blobs, positive duration, `playing` events and no media errors. This verifies local generation and browser playback, not human-rated pronunciation, every device or a public deployment.
+
+For Vercel, configure `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID=JBFqnCBsd6RMkjVDRZzb` and `ELEVENLABS_MODEL_ID=eleven_v3` as server environment variables and redeploy. The ignored local configuration is not transferred through Git. Do not use `NEXT_PUBLIC_` for the key, and protect owner-funded public endpoints as described above.
 
 ## Verification
 
@@ -146,8 +158,8 @@ TEST_BASE_URL=http://127.0.0.1:3000 TEST_LIVE_UBOT=1 npm test -- tests/live-prov
 # Real Thai Ikigai identity (not a mock):
 TEST_BASE_URL=http://127.0.0.1:3000 TEST_LIVE_UBOT=1 npm test -- tests/live-providers.spec.ts -g 'Ikigai persona' --output=/tmp/u-ikigai-live-persona
 
-# Real audio generation in all three languages:
+# Real audio generation and native browser playback in all three languages:
 TEST_BASE_URL=http://127.0.0.1:3000 TEST_LIVE_ELEVENLABS=1 npm test -- tests/live-providers.spec.ts -g 'real ElevenLabs' --output=/tmp/u-ikigai-live-voice
 ```
 
-On 2026-10-16, the real U-Bot check passed: login through the discovered public key, an actual coaching reply, and a follow-up retaining the art-studio goal. That initial check used transient credentials. At the user’s later explicit request, login configuration was saved in owner-only, Git-ignored `.env.local`; the credential-containing local notebook is also ignored. The opt-in real Thai persona test also passed after the compatibility brief was added: the reply identified U-Pilot and Ikigai and returned no financial proposal. This is an observed provider check, not a guarantee that every model answer will follow the persona. Uploaded-image behavior is covered by transport/browser tests, not a live image-quality evaluation. ElevenLabs request/playback/fallback tests use replaced transport and audio; real ElevenLabs generation still requires its API key. Neither adapter tests nor generated audio alone establish audible quality on every device.
+On 2026-10-16, the real U-Bot check passed: login through the discovered public key, an actual coaching reply, and a follow-up retaining the art-studio goal. That initial check used transient credentials. At the user’s later explicit request, login configuration was saved in owner-only, Git-ignored `.env.local`; the credential-containing local notebook is also ignored. The opt-in real Thai persona test also passed after the compatibility brief was added: the reply identified U-Pilot and Ikigai and returned no financial proposal. This is an observed provider check, not a guarantee that every model answer will follow the persona. Uploaded-image behavior is covered by transport/browser tests, not a live image-quality evaluation. Ordinary ElevenLabs tests replace provider transport; the two separately opted-in generation/native-playback checks also passed with the locally configured account. Neither adapter tests nor generated audio alone establish audible quality on every device.
