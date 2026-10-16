@@ -73,7 +73,7 @@ export function planAction(plan: CompanionPlan): PendingSignatureRequest['onConf
 
 export function requestedDollars(text: string): number | null {
   if (/[-−]\s*\$/.test(text)) return null;
-  const matches = [...text.matchAll(/\$\s*([-−]?\s*\d[\d,.]*)|([-−]?\s*\d[\d,.]*)\s*(?:usd|dollars?|ดอลลาร์)/gi)];
+  const matches = [...text.matchAll(/\$\s*([-−]?\s*\d[\d,.]*)|([-−]?\s*\d[\d,.]*)\s*(?:usd|dollars?|d[oó]lares?|ดอลลาร์)/gi)];
   if (matches.length !== 1) return null;
   const raw = (matches[0][1] ?? matches[0][2]).trim();
   if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(raw)) return null;
@@ -83,7 +83,7 @@ export function requestedDollars(text: string): number | null {
 
 export function isCompanionCancellation(text: string): boolean {
   // Thai has no word spaces: “อย่า” must not match inside “ตัวอย่าง” (example).
-  return /\b(?:cancel|stop|don.t|do not|cancelar|no quiero)\b|ไม่ต้อง|ยกเลิก|(?:^|\s)อย่า/i.test(text);
+  return /\b(?:cancel|stop|don.t|do not|won.t|will not|not asking|not (?:going|ready) to|cancelar|no (?:quiero|voy a|necesito|autorizo|hagas|ahorr\w*|pag\w*|compr\w*|pid\w*|recib\w*))\b|ไม่(?:ต้อง|อยาก|ออม|จ่าย|ซื้อ|สั่ง|เอา|ทำ)|ยกเลิก|อย่า(?!ง)/i.test(text);
 }
 
 /** Model output is untrusted. Only explicit, supported user intents can propose money actions. */
@@ -94,7 +94,7 @@ export function restrictCompanionPlan(reply: CompanionReply, input: CompanionInp
   const intent = userText.join(' ');
   const latest = userText.at(-1) ?? '';
   const quantities = [...latest.matchAll(/\d+(?:[.,]\d+)*/g)].map((match) => Number(match[0].replaceAll(',', '')));
-  const lastAmountMessage = [...userText].reverse().find((text) => /\$|usd|dollars?|ดอลลาร์/.test(text));
+  const lastAmountMessage = [...userText].reverse().find((text) => /\$|usd|dollars?|d[oó]lares?|ดอลลาร์/.test(text));
   const amount = lastAmountMessage ? requestedDollars(lastAmountMessage) : null;
   const allowed = !input.image && !isCompanionCancellation(latest) && (plan.kind === 'save_gold'
     ? /gold|ทอง|oro/.test(intent) && /sav|put|add|make it|change|ออม|เติม|เปลี่ยน|ahorr|añad|cambia/.test(latest) && requestedDollars(latest) === amount && amount === plan.amountUsd && amount !== null && amount <= input.context.availableUsd && amount <= input.context.remainingDailyUsd

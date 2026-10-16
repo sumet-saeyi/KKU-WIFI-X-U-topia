@@ -9,6 +9,7 @@ import { IkigaiSelector } from '@/components/product/IkigaiSelector';
 import { AiCompanion } from '@/components/product/AiCompanion';
 import { PoweredBy } from '@/components/product/PoweredBy';
 import { companionContext, planAction, type CompanionPlan } from '@/lib/companion';
+import { aiAvailabilityLabel } from '@/lib/aiStatus';
 import { Icon } from '@/components/ui/Icon';
 import { screenLabel, type ScreenId } from '@/lib/product';
 import { MentorDrawer } from '@/components/MentorDrawer';
@@ -39,6 +40,7 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
   const [speaking, setSpeaking] = useState(false);
   const [voiceProvider, setVoiceProvider] = useState<'browser' | 'elevenlabs'>('browser');
   const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voiceIssue, setVoiceIssue] = useState<'' | 'language' | 'unavailable' | 'fallback'>('');
   const [speechConfigured, setSpeechConfigured] = useState(false);
   const [toast, setToast] = useState('');
   const [guideOpen, setGuideOpen] = useState(false);
@@ -55,6 +57,11 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const w = (en: string, th: string, es: string) => words(language, en, th, es);
+  const voiceIssueMessage = (issue: 'language' | 'unavailable' | 'fallback') => issue === 'language'
+    ? w('This device has no voice for this language. Your guide text is still on screen.', 'อุปกรณ์นี้ยังไม่มีเสียงภาษานี้ คุณยังอ่านคำแนะนำบนจอได้', 'Este dispositivo no tiene voz para este idioma. Puedes leer la guía en pantalla.')
+    : issue === 'fallback'
+      ? w('Device voice · ElevenLabs is unavailable', 'เสียงจากอุปกรณ์ · ElevenLabs ยังไม่พร้อม', 'Voz del dispositivo · ElevenLabs no está disponible')
+      : w('Voice is unavailable here. Your guide text is shown on screen.', 'อุปกรณ์นี้ยังไม่พร้อมอ่านเสียง คุณอ่านคำแนะนำบนจอได้', 'La voz no está disponible aquí. Puedes leer la guía en pantalla.');
 
   const updateWallet = (next: WalletState) => { walletRef.current = next; setWallet(next); };
   const askAi = (text = '') => { setAiSeed((current) => ({ id: current.id + 1, text })); setAiOpen(true); };
@@ -70,7 +77,7 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
       fetch('/api/agent', { cache: 'no-store', signal: AbortSignal.any([current.signal, AbortSignal.timeout(5000)]) })
         .then((response) => { if (!response.ok) throw new Error('unavailable'); return response.json(); })
         .then((data) => { if (!current.signal.aborted) { setAiConfigured(typeof data.configured === 'boolean' ? data.configured : null); setSpeechConfigured(data.speech?.configured === true); } })
-        .catch(() => { /* A failed status check never disables the next live request. */ });
+        .catch(() => { if (!current.signal.aborted) setAiConfigured(null); /* The next question still tries live AI. */ });
     };
     const disconnect = () => { controller?.abort(); setBrowserOnline(false); stopSpeaking(); setSpeaking(false); };
     check();
@@ -124,12 +131,19 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
   };
   const addTrace = (trace: ToolCallTrace) => setTraces((current) => [trace, ...current].slice(0, 50));
   const startReading = (text: string, spokenLanguage: LanguageCode = language) => {
-    setSpeaking(true);
+    setSpeaking(true); setVoiceIssue('');
+    let unavailableReported = false;
+    const unavailable = (reason: 'unsupported' | 'language' | 'playback') => {
+      unavailableReported = true;
+      const issue = reason === 'language' ? 'language' : 'unavailable';
+      setVoiceIssue(issue); notify(voiceIssueMessage(issue));
+    };
     if (!speakCalmly(text, spokenLanguage, () => { setSpeaking(false); setVoiceLoading(false); }, {
       connected: !stageSafeMode && speechConfigured,
       onProvider: (provider, state) => { setVoiceProvider(provider); setVoiceLoading(state === 'loading'); },
-      onFallback: () => notify(w('ElevenLabs is unavailable. Using your device voice instead.', 'ElevenLabs ยังไม่พร้อม จึงใช้เสียงจากอุปกรณ์แทน', 'ElevenLabs no está disponible. Se usará la voz de tu dispositivo.')),
-    })) notify(w('Voice is unavailable here. Your guide text is shown on screen.', 'อุปกรณ์นี้ยังไม่พร้อมอ่านเสียง คุณอ่านคำแนะนำบนจอได้', 'La voz no está disponible aquí. Puedes leer la guía en pantalla.'));
+      onFallback: () => { setVoiceIssue('fallback'); notify(w('ElevenLabs is unavailable. Using your device voice instead.', 'ElevenLabs ยังไม่พร้อม จึงใช้เสียงจากอุปกรณ์แทน', 'ElevenLabs no está disponible. Se usará la voz de tu dispositivo.')); },
+      onUnavailable: unavailable,
+    }) && !unavailableReported) unavailable('unsupported');
   };
   const speak = (text: string) => {
     if (speaking) { stopSpeaking(); setSpeaking(false); return; }
@@ -173,8 +187,8 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
     return prepareSignature(request, makeTrace(request.pillar, 'reviewCompanionProposal', { action, amountUsd: request.usdValue }, 'Created a fixed, validated sample review from a companion proposal. Explicit confirmation is still required.', 'PASSED_NON_CUSTODIAL_CAP'));
   };
   const readAi = (text: string, answerLanguage: LanguageCode = language) => startReading(text, answerLanguage);
-  const stopAiVoice = () => { stopSpeaking(); setSpeaking(false); };
-  const voiceLabel = speaking ? voiceProvider === 'elevenlabs' ? voiceLoading ? w('Preparing ElevenLabs voice…', 'กำลังเตรียมเสียง ElevenLabs…', 'Preparando voz ElevenLabs…') : w('ElevenLabs voice', 'เสียง ElevenLabs', 'Voz ElevenLabs') : w('Device voice', 'เสียงจากอุปกรณ์', 'Voz del dispositivo') : stageSafeMode ? w('Device voice · offline', 'เสียงจากอุปกรณ์ · ออฟไลน์', 'Voz del dispositivo · sin conexión') : speechConfigured ? w('ElevenLabs voice · device fallback', 'เสียง ElevenLabs · สำรองด้วยเสียงอุปกรณ์', 'Voz ElevenLabs · respaldo del dispositivo') : w('Device voice · ElevenLabs not connected', 'เสียงอุปกรณ์ · ยังไม่เชื่อมต่อ ElevenLabs', 'Voz del dispositivo · ElevenLabs no conectado');
+  const stopAiVoice = () => { stopSpeaking(); setSpeaking(false); setVoiceIssue(''); };
+  const voiceLabel = voiceIssue ? voiceIssueMessage(voiceIssue) : speaking ? voiceProvider === 'elevenlabs' ? voiceLoading ? w('Preparing ElevenLabs voice…', 'กำลังเตรียมเสียง ElevenLabs…', 'Preparando voz ElevenLabs…') : w('ElevenLabs voice', 'เสียง ElevenLabs', 'Voz ElevenLabs') : w('Device voice', 'เสียงจากอุปกรณ์', 'Voz del dispositivo') : stageSafeMode ? w('Device voice · offline', 'เสียงจากอุปกรณ์ · ออฟไลน์', 'Voz del dispositivo · sin conexión') : speechConfigured ? w('ElevenLabs voice · device fallback', 'เสียง ElevenLabs · สำรองด้วยเสียงอุปกรณ์', 'Voz ElevenLabs · respaldo del dispositivo') : w('Device voice · ElevenLabs not connected', 'เสียงอุปกรณ์ · ยังไม่เชื่อมต่อ ElevenLabs', 'Voz del dispositivo · ElevenLabs no conectado');
   const runAgent = async (kind: string, prompt: string, image?: string): Promise<AgentResult> => {
     const saved = (): AgentResult => ({ text: stageSafeAnswer(kind, language), source: 'stage-safe' });
     if (stageSafeMode || (typeof window !== 'undefined' && !window.navigator.onLine)) {
@@ -231,10 +245,10 @@ export default function IkigaiApp({ initialMode }: { initialMode?: ExperienceMod
               const request = signatureRequest('PAY_THB_BILL', 25, language); request.title = linkedMerchant;
               prepareSignature(request, makeTrace('profession', 'prepareMerchantQrPayment', { merchant: linkedMerchant, amountThb: 450 }, 'Prepared a demo payment from a generated merchant QR link.'));
             }}>{w('Try payment', 'ลองชำระเงิน', 'Probar pago')} →</button></section>}
-            <div hidden={screen !== 'home'}><HomeDashboard mode={experienceMode} language={language} wallet={wallet} onNavigate={navigate} onTour={() => setGuideOpen(true)} onAskAi={askAi} stageSafeMode={stageSafeMode} /></div>
+            <div hidden={screen !== 'home'}><HomeDashboard mode={experienceMode} language={language} wallet={wallet} onNavigate={navigate} onTour={() => setGuideOpen(true)} onAskAi={askAi} stageSafeMode={stageSafeMode} configured={aiConfigured} /></div>
             <div hidden={screen === 'home' || screen === 'wallet'} className="task-workspace">
               <IkigaiSelector language={language} activePillar={activePillar} onSelect={navigate} />
-              <div className="ai-task-entry"><span><Icon name="spark" size={19} /><span><strong>{w('You can talk this through.', 'ค่อย ๆ คุยเรื่องนี้ด้วยกันได้', 'Podemos pensar esto juntos.')}</strong><small>{stageSafeMode ? w('Prepared examples · no live AI calls', 'ตัวอย่างที่เตรียมไว้ · ไม่เรียก AI สด', 'Ejemplos preparados · sin llamadas a IA en vivo') : w('Connected AI · your approval always comes first', 'AI ออนไลน์ · คุณยืนยันก่อนเสมอ', 'IA conectada · tú siempre apruebas primero')}</small></span></span><button onClick={() => askAi()}>{w('Ask U-Pilot', 'ถาม U-Pilot', 'Preguntar a U-Pilot')}<Icon name="arrow" size={16} /></button></div>
+              <div className="ai-task-entry"><span><Icon name="spark" size={19} /><span><strong>{w('You can talk this through.', 'ค่อย ๆ คุยเรื่องนี้ด้วยกันได้', 'Podemos pensar esto juntos.')}</strong><small>{aiAvailabilityLabel(language, stageSafeMode, aiConfigured)}</small></span></span><button onClick={() => askAi()}>{w('Ask U-Pilot', 'ถาม U-Pilot', 'Preguntar a U-Pilot')}<Icon name="arrow" size={16} /></button></div>
               <div key={resetKey}>
                 {pillarOrder.map((pillar) => <section key={pillar} id={`panel-${pillar}`} hidden={screen !== pillar} aria-label={screenLabel(pillar, language)} className="module-card">
                   {pillar === 'passion' && <PassionLegacyModule {...commonProps} />}

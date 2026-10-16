@@ -18,6 +18,8 @@
 .agent-source-note { display:block; font-size:11px; line-height:1.7; color:#adc7b5; margin-bottom:7px; letter-spacing:0; }
 @media(max-width:360px) { .powered-by.compact { gap:6px; } .powered-by.compact>span { font-size:8px; } .powered-by.compact>div { gap:8px; } .powered-by.compact a:nth-child(2) img { width:42px; } .powered-by.compact a:nth-child(3) img { width:56px; } .ai-chat-brand { gap:7px; } }
 .voice-provider-note { color:#a9c3b1; font-size:11px; line-height:1.7; margin:6px 0 10px; overflow-wrap:anywhere; }
+.ai-message-preview { border-style:dashed!important; border-color:#b6ddc53a!important; }
+.ai-message-preview>small { display:block; color:#a4bdaa; font-size:11px; line-height:1.8; margin-top:12px; }
 .ai-privacy-note summary { cursor:pointer; min-height:32px; display:list-item; align-content:center; color:#bdd4c5; }
 .ai-privacy-note p { margin:6px 0 10px; }
 .home-ai-source { display:block; width:fit-content; padding:5px 9px; margin:12px 0; border:1px solid #b6ddc529; border-radius:6px; color:#b8cdbb; font-size:11px; line-height:1.6; }

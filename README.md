@@ -68,7 +68,7 @@ U-Pilot is the app’s warm, practical AI companion. Ask a question, explore a g
 - **Online first:** the app tries the live service automatically. Clearly labeled saved guides keep essential practice journeys available when connectivity or a provider fails; the next question tries online again.
 - **You stay in control:** AI can explain or propose a supported example. It cannot approve a payment or execute a financial action.
 
-Live conversation uses U-Bot, not an OpenAI API key. Browser replies currently arrive as validated complete responses, not token-by-token chat streaming. Photos are informational only; a photographed bill never authorizes a payment.
+Live conversation uses U-Bot, not an OpenAI API key. U-Pilot forwards arriving explanation text as a provisional draft; action buttons, follow-ups and read-aloud wait for complete validation. The provider may send an entire reply in one batch—there is no simulated typing timer. Photos are informational only; a photographed bill never authorizes a payment.
 
 ### Guidance is not permission
 
@@ -163,7 +163,7 @@ The full app needs a host that runs **Next.js server routes**, such as [Vercel](
 
 ## Verification you can reproduce
 
-Last branding verification, **2026-10-16**: production build passed; production test suite **85 passed, 3 skipped**. The skipped tests are explicit opt-in real-provider checks, not silently counted as verified integrations.
+Last streaming, voice and UX verification, **2026-10-16**: production build passed; production test suite **106 passed, 4 skipped**. The skipped tests are explicit opt-in real-provider checks, not silently counted as verified integrations. See the [AI verification record](./docs/07_AI_EXPERIENCE.md#streaming-and-connection-status-update) for provider batching limits and [voice recovery checks](./docs/07_AI_EXPERIENCE.md#voice-and-intent-recovery-update).
 
 ```bash
 npx --yes playwright install chromium
@@ -214,6 +214,8 @@ The first five documents preserve the original product vision. The implementatio
 ### Logo and attribution
 
 Download the existing four-petal mark as a 1024 × 1024 [transparent PNG](./public/branding/u-ikigai-logo.png) or [dark app-icon PNG](./public/branding/u-ikigai-icon.png). Regenerate them with `npm run logo:export`. Refresh application screenshots against a running local production server with `npm run docs:screenshots`.
+
+Submission assets: [16:9 cover and five screenshots](./docs/submission-media/README.md), or download the [complete upload ZIP](./docs/submission-media/u-ikigai-upload-pack.zip). All six upload images are 1920 × 1080 PNGs; screenshots use real application captures, and the cover illustration was generated separately.
 
 The app’s **Powered by** row includes [U-Bot](https://u.bot), [U-topia](https://www.u-topia.com), [ElevenLabs](https://elevenlabs.io) and [Avalanche](https://www.avalanche.com). Original marks belong to their owners; attribution does not imply endorsement, partnership or an active provider connection. [Asset sources](./public/brands/README.md).
 

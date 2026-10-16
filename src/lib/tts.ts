@@ -10,6 +10,7 @@ export interface SpeechOptions {
   connected?: boolean;
   onProvider?: (provider: 'browser' | 'elevenlabs', state: 'loading' | 'playing') => void;
   onFallback?: () => void;
+  onUnavailable?: (reason: 'unsupported' | 'language' | 'playback') => void;
 }
 
 export function speechChunks(text: string, maximum = 3500): string[] {
@@ -44,16 +45,26 @@ export function speakCalmly(text: string, language: LanguageCode, onEnd?: () => 
   const deviceVoice = (content: string, fallback = false) => {
     if (!active()) return false;
     if (fallback) options.onFallback?.();
-    options.onProvider?.('browser', 'playing');
-    if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) { finish(); return false; }
-    const utterance = new SpeechSynthesisUtterance(content);
-    utterance.lang = localeByLanguage[language];
-    utterance.rate = 0.88; utterance.pitch = 1.02; utterance.volume = 0.95;
-    const voices = window.speechSynthesis.getVoices();
-    utterance.voice = voices.find((voice) => voice.lang === utterance.lang) ?? voices.find((voice) => voice.lang.startsWith(language)) ?? null;
-    utterance.onend = finish; utterance.onerror = finish;
-    window.speechSynthesis.speak(utterance);
-    return true;
+    const unavailable = (reason: 'unsupported' | 'language' | 'playback') => {
+      if (active() && !finished) { options.onUnavailable?.(reason); finish(); }
+      return false;
+    };
+    try {
+      const synthesis = window.speechSynthesis;
+      if (!synthesis || typeof window.SpeechSynthesisUtterance !== 'function' || typeof synthesis.getVoices !== 'function' || typeof synthesis.speak !== 'function') return unavailable('unsupported');
+      const utterance = new window.SpeechSynthesisUtterance(content);
+      utterance.lang = localeByLanguage[language];
+      utterance.rate = 0.88; utterance.pitch = 1.02; utterance.volume = 0.95;
+      const voices = synthesis.getVoices();
+      utterance.voice = voices.find((voice) => voice.lang.toLowerCase() === utterance.lang.toLowerCase()) ?? voices.find((voice) => voice.lang.toLowerCase() === language || voice.lang.toLowerCase().startsWith(`${language}-`)) ?? null;
+      // An empty list can mean voices are still loading; let the browser resolve the requested language.
+      if (voices.length && !utterance.voice) return unavailable('language');
+      utterance.onend = finish;
+      utterance.onerror = (event) => { unavailable(['language-unavailable', 'voice-unavailable'].includes(event.error) ? 'language' : 'playback'); };
+      synthesis.speak(utterance);
+      if (active() && !finished) options.onProvider?.('browser', 'playing');
+      return !finished;
+    } catch { return unavailable('playback'); }
   };
   if (!options.connected) return deviceVoice(text);
   if (!('Audio' in window)) return deviceVoice(text, true);
@@ -98,6 +109,6 @@ export function stopSpeaking() {
   speechRequest?.abort(); speechRequest = null;
   if (typeof window !== 'undefined') disposeAudio();
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
+    try { window.speechSynthesis?.cancel(); } catch { /* A failed device API must not prevent navigation or starting a new reply. */ }
   }
 }

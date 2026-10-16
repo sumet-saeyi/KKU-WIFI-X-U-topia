@@ -6,6 +6,7 @@ import { POST as speech } from '../src/app/api/tts/route';
 import { companionContext } from '../src/lib/companion';
 import { initialWallet } from '../src/lib/presetData';
 import { newUBotSession } from '../src/lib/ubot';
+import { readCompanionResponse } from '../src/lib/companionStream';
 
 loadEnvConfig(process.cwd(), false, { info() {}, error() {} });
 const post = (path: string, body: unknown) => new Request(`http://localhost${path}`, { method: 'POST', body: JSON.stringify(body) });
@@ -45,4 +46,29 @@ test('opt-in real U-Bot honors the Ikigai persona in Thai', async () => {
   await test.info().attach('provider-persona-reply', { body: JSON.stringify({ text: result.text, plan: result.plan }), contentType: 'application/json' });
   expect(/U.?Pilot/i.test(result.text)).toBe(true); expect(/ikigai|อิคิไก/i.test(result.text)).toBe(true);
   expect(result.plan.kind).toBe('none');
+});
+
+test('opt-in real U-Bot stream transport returns a validated reply and records actual chunk timing', async ({ request }) => {
+  test.skip(process.env.TEST_LIVE_UBOT !== '1', 'Requires explicit opt-in and a configured U-Bot account.');
+  test.setTimeout(120000);
+  const baseURL = test.info().project.use.baseURL!;
+  // Native fetch keeps the response stream readable; the Playwright request API buffers it.
+  const started = performance.now();
+  const response = await fetch(`${baseURL}/api/companion`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/x-ndjson' },
+    body: JSON.stringify({ stageSafeMode: false, language: 'en', sessionId: newUBotSession(), context: companionContext(initialWallet, 'home'), messages: [{ role: 'user', text: 'I am a freelancer dreaming of a little creative studio. Explain three practical free steps I can take before saving or buying anything. Use about 150 words in short paragraphs, with a concrete example for each step. Do not propose a money action.' }] }),
+    signal: AbortSignal.timeout(70000),
+  });
+  const checkpoints: { atMs: number; length: number }[] = [];
+  const result = await readCompanionResponse(response, (text) => checkpoints.push({ atMs: Math.round(performance.now() - started), length: text.length }));
+  expect(result.source).toBe('live'); expect(result.plan.kind).toBe('none'); expect(result.text.length).toBeGreaterThan(50);
+  expect(checkpoints.length).toBeGreaterThan(0);
+  const completedMs = Math.round(performance.now() - started);
+  console.log(JSON.stringify({ provider: 'ubot', progressiveUpdates: checkpoints.length, firstLength: checkpoints[0]?.length, finalLength: result.text.length, firstTextMs: checkpoints[0]?.atMs, completedMs }));
+  await test.info().attach('real-stream-timing', { body: JSON.stringify({ checkpoints, completedMs, finalLength: result.text.length }), contentType: 'application/json' });
+  expect(checkpoints[0].atMs).toBeLessThanOrEqual(completedMs);
+  expect(checkpoints.at(-1)!.length).toBeGreaterThan(0);
+  // Provider-side batching is observable, not something the application may fake with a typing timer.
+  if (process.env.TEST_REQUIRE_INCREMENTAL_UBOT === '1') expect(checkpoints.some((point) => point.length < result.text.length)).toBe(true);
+  expect((await request.get('/api/agent')).ok()).toBe(true);
 });

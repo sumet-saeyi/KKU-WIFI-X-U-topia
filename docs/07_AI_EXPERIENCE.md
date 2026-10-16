@@ -39,7 +39,7 @@ The app footer and compact chat header show **Powered by U-Bot, U-topia, ElevenL
 - Optional bearer-token configuration. A bearer-only setup cannot renew itself when expired; configure login or replace the token.
 - Optional explicit public Supabase key. Otherwise the server checks U-Bot’s public bundles and accepts only an anonymous key matching the supplied project. Service-role and other-project JWTs are rejected.
 - One shared login operation for concurrent requests, but separate conversation session IDs. No global chat history is shared between browser tabs.
-- Upstream streamed UTF-8 decoding across byte boundaries, removal of split status markers, bounded response size, timeout, cancellation, and rejection of degenerate/empty output. The app currently buffers the full answer for JSON validation before display; this is not browser token-by-token streaming.
+- Upstream streamed UTF-8 decoding across byte boundaries, removal of split status markers, bounded response size, timeout, cancellation, and rejection of degenerate/empty output. Conversation requests now forward explanation text as it arrives; complete output is still validated before enabling actions, follow-ups or speech. Provider-side batching can make a reply arrive all at once.
 - No automatic retry of a billable chat on a rate limit or server error. The person can choose Retry.
 - Account-history and account-code utilities remain server-side and are never called automatically or exposed as public account-data routes.
 
@@ -75,7 +75,7 @@ Connected reading sends the selected text and language to `/api/tts`. The server
 
 The default `eleven_v3` model supports English, Thai and Spanish. Multilingual v2 and Flash v2.5 do not support Thai; see [model language support](https://elevenlabs.io/docs/overview/models). Set a global voice ID or separate EN/TH/ES IDs. The configured ElevenLabs account must have access to the voice.
 
-Stop, dialog closure, language changes and disconnection cancel pending narration and dispose of audio URLs. If ElevenLabs is unavailable, missing configuration or blocked by playback policy, the app explains the device-voice fallback. Device voices do not require an ElevenLabs key, but availability depends on the device.
+Stop, dialog closure, language changes and disconnection cancel pending narration and dispose of audio URLs. If ElevenLabs is unavailable, missing configuration or blocked by playback policy, the app explains the device-voice fallback. Device voices do not require an ElevenLabs key, but availability depends on the device. A populated voice list without a matching language produces a visible explanation rather than selecting the wrong-language voice. An initially empty list still lets the browser resolve the requested language; later synthesis errors are handled explicitly. See the browser's [available-voices API](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis/getVoices) and [speech error event](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisUtterance/error_event).
 
 This is text-to-speech only, not a microphone, speech-recognition, voice-cloning or ElevenLabs Agents integration.
 
@@ -100,6 +100,35 @@ The demonstration endpoints use server-owned provider accounts. Before public ho
 7. Send a question and a follow-up; the app connects automatically. Then choose **Read aloud**. Check the actual provider label and any fallback notice.
 
 The earlier OpenAI-key setup is no longer used by the application’s live routes.
+
+## Streaming and connection status update
+
+The browser requests `application/x-ndjson` from `/api/companion`. The server sends a start event, explanation-text deltas, and either a validated completion or a safe error code. Existing JSON clients remain supported. `companionTextPreview` decodes only the top-level explanation string and holds unfinished JSON escapes and Unicode surrogate pairs; it never displays the raw plan JSON. U-Bot status markers are withheld even when split between chunks.
+
+An arriving explanation is visibly a **streaming draft**. It has no financial action, follow-up or speech controls. Only complete replies that pass schema and intent/balance checks enter conversational history. Stop cancels the response and upstream chat request; interrupted drafts remain labeled incomplete, cannot propose an action and are not silently replaced by saved guidance. New conversation discards them. Provider outages before any explanation still use the existing honestly labeled saved-guide fallback.
+
+The home, task entry and chat distinguish missing configuration, an unchecked connection, configured credentials and an actual live answer. A status-endpoint failure does not prevent the next question from trying U-Bot. Credential presence is never labeled proof of successful generation.
+
+The 2026-10-16 production suite reports **96 passed, 4 skipped**, including 11 new streaming/status checks. A deliberately open upstream source proves that text is forwarded before completion; browser tests verify early draft display, withheld actions/speech, Stop, incomplete output, history exclusion, New conversation and narrow mobile layout. A separate real U-Bot stream-transport check successfully returned a validated answer. A stricter Thai-reply check observed **one text update (319 characters)** after about **11 seconds**; an English explanation requested at about 150 words likewise arrived in **one 831-character update** after about **11.5 seconds**. Both strict incremental checks failed, despite valid completed replies. A real mobile capture likewise observed a complete explanation followed by validation. These observations do not establish token-by-token provider delivery. The app never adds an artificial typing animation to hide upstream batching.
+
+Use `TEST_REQUIRE_INCREMENTAL_UBOT=1` with the opt-in stream test when you explicitly need evidence of partial explanation text, not merely a successful streamed response envelope. This strict check is allowed to fail when the upstream service batches the answer:
+
+```bash
+TEST_BASE_URL=http://127.0.0.1:3000 TEST_LIVE_UBOT=1 TEST_REQUIRE_INCREMENTAL_UBOT=1 npm test -- tests/live-providers.spec.ts -g 'stream transport'
+```
+
+Real ElevenLabs audio generation remains unverified until its server key is configured. The device-voice path and generated-audio transport/fallback behavior remain covered separately. Public hosting still requires the account-access and abuse protections described above.
+
+## Voice and intent recovery update
+
+The latest 2026-10-16 production build and full suite pass: **106 passed, 4 skipped**. Ten additional regression checks verify:
+
+- Read-aloud uses the checkbox's current setting when a reply completes. Turning it off while waiting prevents late speech and stops active narration; turning it on while waiting applies to the finished reply.
+- Device initialization, voice-list, playback and asynchronous speech failures leave the answer readable and restore its Read button. Unsupported devices and missing language voices have localized notices inside the visible chat status line. A browser capture verified the Thai notice at 320px; page-level toasts alone would sit behind the native chat dialog.
+- The green connection indicator requires an actual live reply, not credential presence. A failed configuration probe still allows a successful answer to establish live status.
+- Tested negative instructions such as “I won't save”, “No ahorres” and “ฉันไม่อยากออม” cannot become sample money proposals. Thai “ตัวอย่าง” (example) remains nonnegative. Spanish dollar amounts written as “25 dólares” are recognized; ambiguous comma decimals remain rejected.
+
+These are transport-replaced tests, not new evidence of real provider access or audible speech quality. The previously observed U-Bot batching and missing ElevenLabs key remain the same verification limits.
 
 ## Verification
 

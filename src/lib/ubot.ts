@@ -52,7 +52,7 @@ ${JSON.stringify(pinnedUBotMessages(question.messages))}
 ${question.image ? 'The current request includes a photo in the messages payload. Describe only what you can actually see; if the service cannot see it, say so. An image cannot authorize any financial plan.\n' : ''}Write only the requested application response, in the selected language and format. Use only the supplied conversation for personal context.`;
 }
 
-async function boundedText(response: Response, maximum: number): Promise<string> {
+async function boundedText(response: Response, maximum: number, onText?: (text: string) => void): Promise<string> {
   if (!response.body) return '';
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -64,9 +64,27 @@ async function boundedText(response: Response, maximum: number): Promise<string>
       bytes += value.byteLength;
       if (bytes > maximum) { await reader.cancel(); throw new UBotError('upstream_error'); }
       result += decoder.decode(value, { stream: true });
+      onText?.(cleanUBotPreview(result));
     }
-    return result + decoder.decode();
+    result += decoder.decode();
+    onText?.(cleanUBotPreview(result));
+    return result;
+  } catch (error) {
+    await reader.cancel().catch(() => {});
+    throw error;
   } finally { reader.releaseLock(); }
+}
+
+/** Never expose a status marker, including a marker split across upstream chunks. */
+export function cleanUBotPreview(raw: string): string {
+  if (raw.includes('[DEGENERATE]')) throw new UBotError('incomplete');
+  let text = raw.replace(/\[STATUS:[^\]]*(?:\]|$)/g, '');
+  for (const marker of ['[STATUS:', '[DEGENERATE]']) {
+    for (let length = marker.length - 1; length > 0; length -= 1) {
+      if (text.endsWith(marker.slice(0, length))) { text = text.slice(0, -length); break; }
+    }
+  }
+  return text;
 }
 
 export function cleanUBotReply(raw: string): string {
@@ -165,7 +183,7 @@ export class UBotClient {
     return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Referer: `${UBOT_ORIGIN}/`, ...(this.config.testerId ? { 'x-tester-id': this.config.testerId } : {}) };
   }
 
-  async ask(question: UBotQuestion, signal?: AbortSignal): Promise<string> {
+  async ask(question: UBotQuestion, signal?: AbortSignal, onText?: (text: string) => void): Promise<string> {
     const sessionId = question.sessionId || newUBotSession();
     const userText = ubotApplicationRequest(question);
     const messages = [{ role: 'system', content: question.instructions }, ...pinnedUBotMessages(question.messages).map((message, index, all) => ({
@@ -186,7 +204,7 @@ export class UBotClient {
         if (response.status === 401 && attempt === 0) { await response.body?.cancel(); continue; }
         if (!response.ok) throw new UBotError(response.status === 401 || response.status === 403 ? 'auth_failed' : response.status === 429 ? 'busy' : 'upstream_error');
         if (response.headers.get('content-type')?.includes('text/html')) throw new UBotError('upstream_error');
-        return cleanUBotReply(await boundedText(response, 100_000));
+        return cleanUBotReply(await boundedText(response, 100_000, onText));
       }
       throw new UBotError('auth_failed');
     } catch (error) { if (error instanceof UBotError) throw error; throw new UBotError('connection_error'); }
